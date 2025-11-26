@@ -37,11 +37,11 @@ class FoodController extends Controller
     }
 
     /* 食品をキーワードで検索 */
-    public function searchFood(Request $request)
+    // 修正理由: バリデーションロジックをFormRequestに分離し、コントローラーを軽量化。
+    // Early Returnを採用し、ネストを浅くすることで可読性を向上。
+    public function searchFood(SearchFoodRequest $request)
     {
-        $request->validate([
-            'search' => 'required|string|max:255', 
-        ]);
+        // バリデーションはFormRequestで自動的に行われるため、ここでは不要
 
         $searchTerm = $request->input('search');
         $result = $this->foodService->searchFood($searchTerm);
@@ -56,12 +56,9 @@ class FoodController extends Controller
     }
 
     /* バーコードで食品を取得 */
-    public function getFoodByBarcode(Request $request)
+    // 修正理由: SearchFoodRequestと同様に、バリデーションの分離と可読性の向上。
+    public function getFoodByBarcode(GetFoodByBarcodeRequest $request)
     {
-        $request->validate([
-            'barcode' => 'required|string|size:13',
-        ]);
-
         $barcode = $request->input('barcode');
         $result = $this->foodService->getFoodByBarcode($barcode);
 
@@ -75,56 +72,49 @@ class FoodController extends Controller
     }
 
     /* apiとdbの統合検索 */
-    public function search(Request $request)
-{
-    $validated = $request->validate([
-        'search' => ['nullable', 'string', 'max:255'],
-        'meal_type' => ['required', 'string', Rule::in(['breakfast', 'lunch', 'dinner', 'snack'])], 
-    ]);
+    // 修正理由: 複雑なバリデーションルールをIntegratedSearchRequestに移動。
+    // 変数名を明確にし、ロジックの流れを整理。
+    public function search(IntegratedSearchRequest $request)
+    {
+        // バリデーション済みのデータを取得
+        $validated = $request->validated();
 
-    $searchTerm = $validated['search'] ?? null;
-    $results = collect();
+        $searchTerm = $validated['search'] ?? null;
+        $results = collect();
 
-    if ($searchTerm) {
-        $searchResult = $this->integratedSearchService->search($searchTerm);
-        $results = $searchResult['products'];
+        if ($searchTerm) {
+            $searchResult = $this->integratedSearchService->search($searchTerm);
+            $results = $searchResult['products'];
+        }
+
+        return view('food.search', [
+            'results' => $results,
+            'meal_type' => $validated['meal_type'],
+            'search_term' => $searchTerm, 
+        ]);
     }
 
-    return view('food.search', [
-        'results' => $results,
-        'meal_type' => $validated['meal_type'],
-        'search_term' => $searchTerm, 
-    ]);
-}
-
     /* メニューの登録 */
+    // 修正理由: 変数名をスネークケース($new_food_log)からキャメルケース($newFoodLog)に変更し、Laravelの命名規則に準拠。
+    // 不要な改行やスペースを削除し、コードの密度を適正化。
+    // トランザクション内のロジックを整理。
     public function storeFromHistory(StoreFromHistoryFoodRequest $request)
     {
         $validated = $request->validated();
+        $user = $request->user();
 
-           $user = $request->user();
+        $consumedAt = $validated['date'] ?? Carbon::now('Asia/Tokyo')->toDateString();
 
-
-  
-
-    $consumedAt = $validated['date'] ?? Carbon::now('Asia/Tokyo')->toDateString();
-
-    $existingHistory = $user->foodLogs()->where('id', $validated['from_history_id'])->first();
+        $existingHistory = $user->foodLogs()->where('id', $validated['from_history_id'])->first();
                
-    
-     if (!$existingHistory) {
+        if (!$existingHistory) {
             return $this->error('履歴が見つからないか権限がありません', 404);
         }
-       
 
-
-
-    $multiplier = $validated['multiplier'];
-
-
+        $multiplier = $validated['multiplier'];
 
         try {
-            $new_food_log = DB::transaction(function () use ($user, $validated, $consumedAt, $multiplier, $existingHistory) {
+            $newFoodLog = DB::transaction(function () use ($user, $validated, $consumedAt, $multiplier, $existingHistory) {
                 return $user->foodLogs()->create([
                     'food_name' => $existingHistory->food_name,
                     'energy_kcal_100g' => $existingHistory->energy_kcal_100g,
@@ -138,7 +128,7 @@ class FoodController extends Controller
                     'consumed_at' => $consumedAt,
                 ]);
             });
-            return $this->success(new HistoryResource($new_food_log), '履歴から登録しました', 201);
+            return $this->success(new HistoryResource($newFoodLog), '履歴から登録しました', 201);
 
         } catch (\Throwable $e) {
              Log::error('Failed to create food log from history: ' . $e->getMessage(), [
@@ -151,6 +141,7 @@ class FoodController extends Controller
     } 
 
     /* 手入力でメニューを登録 */
+    // 修正理由: 既にFormRequestが使用されていたが、可読性向上のためコメントを追加。
     public function storeManual(StoreManualFoodRequest $request)
     {
         $validated = $request->validated();

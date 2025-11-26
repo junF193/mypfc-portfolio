@@ -1,61 +1,81 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# My PFC Manager
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+## 📖 概要
+**My PFC Manager** は、日々の食事管理とPFCバランス（タンパク質・脂質・炭水化物）の最適化をサポートするWebアプリケーションです。
+「何をどれくらい食べたか」を直感的に記録し、理想的な栄養バランスへの到達を支援します。
 
-## About Laravel
+## 🛠 技術スタック
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+### Backend
+- **Framework**: Laravel 10.x
+- **Database**: SQLite (開発環境) / MySQL (本番環境想定)
+- **Authentication**: Laravel Sanctum
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+### Frontend
+- **Core**: Vanilla JavaScript (ES6+)
+- **Component Framework**: Vue.js 3 (Options API)
+- **Styling**: TailwindCSS
+- **Build Tool**: Vite
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## 💡 工夫した点：技術的課題の解決
 
-## Learning Laravel
+### 1. フロントエンド：技術混在環境における状態同期
+本プロジェクトのフロントエンドは、軽量なVanilla JSで構築された基盤（履歴リスト等）と、インタラクティブ性が求められる部分（お気に入りリスト）にVue.jsを導入した**ハイブリッド構成**となっています。
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+開発において直面した最大の課題は、**「Vanilla JS側でのデータ操作を、Vue.js側のコンポーネントにどうリアルタイムで反映させるか」**という点でした。
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+#### 課題：異なる技術間の「壁」
+履歴リスト（Vanilla JS）から「お気に入り登録」を行った際、データベースへの保存は成功しても、画面右側にあるお気に入り一覧（Vue.js）には即座に反映されず、ページリロードが必要な状態でした。これは、VueのリアクティブシステムがVue管理外のDOMイベントを検知できないためです。
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+#### 解決策：CustomEventによるイベント駆動連携
+この課題を解決するために、ブラウザ標準の `CustomEvent` を活用した疎結合な連携メカニズムを実装しました。
 
-## Laravel Sponsors
+1.  **発火 (Publisher)**:
+    Vanilla JS側でAPI通信が成功した直後に、操作内容に応じたカスタムイベント（`external-favorite-added` や `external-favorite-removed`）を `window` オブジェクトに対してディスパッチします。
+2.  **購読 (Subscriber)**:
+    Vueコンポーネントの `mounted` ライフサイクルメソッド内でこれらのイベントをリッスンします。
+3.  **同期**:
+    イベントを受け取ったVueコンポーネントが、ペイロード（追加されたアイテムや削除されたID）を自身の `data` プロパティに取り込むことで、リアクティブにDOMを更新します。
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+このアプローチにより、大規模なステート管理ライブラリ（Vuex/Pinia）を導入することなく、軽量かつ堅牢に技術間の同期ズレを解消しました。
 
-### Premium Partners
+### 2. バックエンド：SPA認証におけるミドルウェア構成の最適化
+SPA開発において、Laravel Sanctumを用いたCookieベース認証がAPIリクエスト時に維持されず、401エラーが多発する問題に直面しました。
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+**【課題と分析】**
+一般的な設定見直しでは解決しなかったため、デバッグ用ミドルウェア（TraceMiddleware）を一時的に導入し、リクエスト処理のパイプラインを可視化しました。
+その結果、APIルートグループにおいて、Cookieの復号やセッション開始を担う `EncryptCookies` や `StartSession` ミドルウェアが実行されていないことが根本原因であると特定しました。
 
-## Contributing
+**【解決策】**
+APIルートの設定を見直し、Sanctumのステートフル認証に必要なミドルウェア群（webグループ相当）が確実に適用されるようルーティング構成を再設計しました。
+これにより、AIツールを単なる回答機としてではなく「思考の壁打ち相手」として活用し、ブラックボックスになりがちなフレームワーク内部の挙動を理解して解決するプロセスを経験しました。
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+## ✨ 主な機能
+- **食事記録**: 日々の食事を検索・登録し、カロリーとPFCを自動計算。
+- **ダッシュボード**: 当日の栄養摂取状況をグラフで可視化。
+- **お気に入り管理**: よく食べるメニューをお気に入りに登録し、ワンタップで記録。
+- **履歴からの登録**: 過去の食事履歴から素早く再登録。
 
-## Code of Conduct
+## 🚀 セットアップ手順
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+```bash
+# リポジトリのクローン
+git clone [https://github.com/junF193/mypfc-portfolio]
+cd my-pfc-manager
 
-## Security Vulnerabilities
+# 依存関係のインストール
+composer install
+npm install
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+# 環境設定
+cp .env.example .env
+php artisan key:generate
 
-## License
+# データベースの準備（SQLiteを使用する場合）
+touch database/database.sqlite
+php artisan migrate
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+# サーバー起動
+php artisan serve
+npm run dev
+```
