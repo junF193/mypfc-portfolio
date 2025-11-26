@@ -1,0 +1,119 @@
+
+  GET|HEAD  / ........................................................................................................ 
+            ⇂ web
+  GET|HEAD  api/favorites ............................................. favorites.index › FavoriteFoodController@index
+            ⇂ api
+            ⇂ App\Http\Middleware\Authenticate:sanctum
+  POST      api/favorites ............................................. favorites.store › FavoriteFoodController@store
+            ⇂ api
+            ⇂ App\Http\Middleware\Authenticate:sanctum
+  DELETE    api/favorites/{foodLogId} ............................. favorites.destroy › FavoriteFoodController@destroy
+            ⇂ api
+            ⇂ App\Http\Middleware\Authenticate:sanctum
+  GET|HEAD  api/sanctum/csrf-cookie .................................................................................. 
+            ⇂ api
+  GET|HEAD  api/user ................................................................................................. 
+            ⇂ api
+            ⇂ App\Http\Middleware\Authenticate:sanctum
+  GET|HEAD  confirm-password .............................. password.confirm › Auth\ConfirmablePasswordController@show
+            ⇂ web
+            ⇂ App\Http\Middleware\Authenticate
+  POST      confirm-password ................................................ Auth\ConfirmablePasswordController@store
+            ⇂ web
+            ⇂ App\Http\Middleware\Authenticate
+  GET|HEAD  dashboard ...................................................................................... dashboard
+            ⇂ web
+            ⇂ App\Http\Middleware\Authenticate
+            ⇂ Illuminate\Auth\Middleware\EnsureEmailIsVerified
+  GET|HEAD  debug-auth ............................................................................................... 
+            ⇂ web
+  GET|HEAD  debug-csrf ............................................................................................... 
+            ⇂ web
+  POST      email/verification-notification ... verification.send › Auth\EmailVerificationNotificationController@store
+            ⇂ web
+            ⇂ App\Http\Middleware\Authenticate
+            ⇂ Illuminate\Routing\Middleware\ThrottleRequests:6,1
+  POST      food-logs ......................................................... food-logs.store › FoodController@store
+            ⇂ web
+            ⇂ App\Http\Middleware\Authenticate
+  GET|HEAD  food-suggestions .................................. food-suggestions.index › FoodController@getSuggestions
+            ⇂ web
+            ⇂ App\Http\Middleware\Authenticate
+  GET|HEAD  food/barcode .............................................. food.barcode › FoodController@getFoodByBarcode
+            ⇂ web
+            ⇂ App\Http\Middleware\Authenticate
+  GET|HEAD  food/log/create .................................................. food-log.create › FoodController@create
+            ⇂ web
+            ⇂ App\Http\Middleware\Authenticate
+  GET|HEAD  food/search .......................................................... food.search › FoodController@search
+            ⇂ web
+            ⇂ App\Http\Middleware\Authenticate
+  POST      food/store ............................................................. food.store › FoodController@store
+            ⇂ web
+            ⇂ App\Http\Middleware\Authenticate
+  GET|HEAD  forgot-password ............................... password.request › Auth\PasswordResetLinkController@create
+            ⇂ web
+            ⇂ Illuminate\Auth\Middleware\RedirectIfAuthenticated
+  POST      forgot-password .................................. password.email › Auth\PasswordResetLinkController@store
+            ⇂ web
+            ⇂ Illuminate\Auth\Middleware\RedirectIfAuthenticated
+  POST      login .......................................................... Auth\AuthenticatedSessionController@store
+            ⇂ web
+            ⇂ Illuminate\Auth\Middleware\RedirectIfAuthenticated
+  GET|HEAD  login ................................................. login › Auth\AuthenticatedSessionController@create
+            ⇂ web
+            ⇂ Illuminate\Auth\Middleware\RedirectIfAuthenticated
+  DELETE    logout .............................................. logout › Auth\AuthenticatedSessionController@destroy
+            ⇂ web
+  POST      logout .............................................. logout › Auth\AuthenticatedSessionController@destroy
+            ⇂ web
+            ⇂ App\Http\Middleware\Authenticate
+  GET|HEAD  mypage ............................................................. mypage.index › MypageController@index
+            ⇂ web
+            ⇂ App\Http\Middleware\Authenticate
+  GET|HEAD  mypage/daily-nutrition .......................... mypage.daily-nutrition › MypageController@dailyNutrition
+            ⇂ web
+            ⇂ App\Http\Middleware\Authenticate
+  PUT       password ................................................ password.update › Auth\PasswordController@update
+            ⇂ web
+            ⇂ App\Http\Middleware\Authenticate
+  GET|HEAD  process-csv ............................................................... CsvImportController@processCsv
+            ⇂ web
+  GET|HEAD  profile ............................................................ profile.edit › ProfileController@edit
+            ⇂ web
+            ⇂ App\Http\Middleware\Authenticate
+  PATCH     profile ........................................................ profile.update › ProfileController@update
+            ⇂ web
+            ⇂ App\Http\Middleware\Authenticate
+  DELETE    profile ...................................................... profile.destroy › ProfileController@destroy
+            ⇂ web
+            ⇂ App\Http\Middleware\Authenticate
+  GET|HEAD  register ................................................. register › Auth\RegisteredUserController@create
+            ⇂ web
+            ⇂ Illuminate\Auth\Middleware\RedirectIfAuthenticated
+  POST      register ............................................................. Auth\RegisteredUserController@store
+            ⇂ web
+            ⇂ Illuminate\Auth\Middleware\RedirectIfAuthenticated
+  POST      reset-password ......................................... password.store › Auth\NewPasswordController@store
+            ⇂ web
+            ⇂ Illuminate\Auth\Middleware\RedirectIfAuthenticated
+  GET|HEAD  reset-password/{token} ................................ password.reset › Auth\NewPasswordController@create
+            ⇂ web
+            ⇂ Illuminate\Auth\Middleware\RedirectIfAuthenticated
+  GET|HEAD  sanctum/csrf-cookie .................... sanctum.csrf-cookie › Laravel\Sanctum › CsrfCookieController@show
+            ⇂ web
+  GET|HEAD  storage/{path} ............................................................................. storage.local
+  GET|HEAD  test-storage ............................................................................................. 
+            ⇂ web
+  GET|HEAD  up ....................................................................................................... 
+  GET|HEAD  verify-email ................................ verification.notice › Auth\EmailVerificationPromptController
+            ⇂ web
+            ⇂ App\Http\Middleware\Authenticate
+  GET|HEAD  verify-email/{id}/{hash} ................................ verification.verify › Auth\VerifyEmailController
+            ⇂ web
+            ⇂ App\Http\Middleware\Authenticate
+            ⇂ Illuminate\Routing\Middleware\ValidateSignature
+            ⇂ Illuminate\Routing\Middleware\ThrottleRequests:6,1
+
+                                                                                                   Showing [41] routes
+
