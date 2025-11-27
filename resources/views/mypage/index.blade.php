@@ -2,7 +2,12 @@
 
 @section('content')
 <div class="container mx-auto p-4">
-  <h1 class="text-2xl font-bold mb-4">マイページ</h1>
+  <div class="flex justify-between items-center mb-4">
+    <h1 class="text-2xl font-bold">マイページ</h1>
+    <button onclick="openProfileModal()" class="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700 text-sm">
+      ⚙️ 目標設定
+    </button>
+  </div>
 
   {{-- セクションボタン群（朝/昼/夕/間食） --}}
   <div class="grid grid-cols-1 gap-4">
@@ -199,6 +204,61 @@ window.MYPAGE_CONFIG = {
 
 @endpush
 
+
+  {{-- プロフィール設定モーダル --}}
+  <div id="profile-modal" class="fixed inset-0 bg-gray-800 bg-opacity-75 flex items-center justify-center hidden z-50">
+    <div class="bg-white p-6 rounded shadow-lg w-11/12 md:w-1/3">
+      <div class="flex items-start justify-between mb-4">
+        <h3 class="text-xl font-semibold">目標設定 (TDEE計算)</h3>
+        <button type="button" onclick="closeProfileModal()" class="text-gray-600 hover:text-gray-800">✕</button>
+      </div>
+      
+      <form id="profile-form" class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700">性別</label>
+          <div class="mt-1 flex space-x-4">
+            <label class="inline-flex items-center">
+              <input type="radio" name="gender" value="male" class="form-radio" {{ ($user->gender->value ?? '') === 'male' ? 'checked' : '' }}>
+              <span class="ml-2">男性</span>
+            </label>
+            <label class="inline-flex items-center">
+              <input type="radio" name="gender" value="female" class="form-radio" {{ ($user->gender->value ?? '') === 'female' ? 'checked' : '' }}>
+              <span class="ml-2">女性</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700">身長 (cm)</label>
+            <input type="number" name="height" step="0.1" value="{{ $user->height }}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm border p-2">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700">体重 (kg)</label>
+            <input type="number" name="weight" step="0.1" value="{{ $user->weight }}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm border p-2">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700">年齢</label>
+          <input type="number" name="age" value="{{ $user->age }}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm border p-2">
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700">活動レベル</label>
+          <select name="activity_level" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm border p-2">
+            <option value="low" {{ ($user->activity_level->value ?? '') === 'low' ? 'selected' : '' }}>低い (デスクワーク中心)</option>
+            <option value="medium" {{ ($user->activity_level->value ?? 'medium') === 'medium' ? 'selected' : '' }}>普通 (立ち仕事・軽い運動)</option>
+            <option value="high" {{ ($user->activity_level->value ?? '') === 'high' ? 'selected' : '' }}>高い (肉体労働・激しい運動)</option>
+          </select>
+        </div>
+
+        <div class="flex justify-end pt-4">
+          <button type="button" onclick="saveProfile()" class="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700">保存して計算</button>
+        </div>
+      </form>
+    </div>
+  </div>
 
 @endsection
 

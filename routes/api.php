@@ -60,6 +60,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::patch('/favorites/{favorite}', [FavoriteController::class, 'update'])->name('favorites.update');
     Route::delete('/favorites/{favorite}', [FavoriteController::class, 'destroy'])->name('favorites.destroy');
     Route::delete('/favorites/by-food-log/{foodLogId}', [FavoriteController::class, 'destroyByFoodLog'])->name('favorites.destroy.by_food_log');
+
+    // User Profile
+    Route::post('/user/profile', [App\Http\Controllers\MypageController::class, 'updateProfile'])->name('user.profile.update');
 });
 
 // ✅ 将来的に追加する API エンドポイント

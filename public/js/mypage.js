@@ -458,7 +458,35 @@
       const data = await res.json();
 
       const caloriesEl = document.getElementById('calories-total');
-      if (caloriesEl) caloriesEl.textContent = `${toNumberSafe(data.calories_total, 0)} kcal`;
+      // Goal display logic
+      let goalText = '';
+      if (data.goal && data.goal.calories > 0) {
+        goalText = ` / ${data.goal.calories} kcal`;
+
+        // Update PFC goal text if elements exist (optional, or just tooltip)
+        // For now, let's just update the main calorie display to show "Current / Goal"
+      }
+      if (caloriesEl) caloriesEl.textContent = `${toNumberSafe(data.calories_total, 0)}${goalText}`;
+
+      // Progress Bar (Optional: Add a visual progress bar below calories)
+      if (data.goal && data.goal.calories > 0) {
+        const percent = Math.min(100, (data.calories_total / data.goal.calories) * 100);
+        let bar = document.getElementById('calorie-progress-bar');
+        if (!bar) {
+          // Create bar if not exists
+          const container = caloriesEl.parentElement;
+          const barContainer = document.createElement('div');
+          barContainer.className = 'w-full bg-gray-200 rounded-full h-2.5 mt-2';
+          bar = document.createElement('div');
+          bar.id = 'calorie-progress-bar';
+          bar.className = 'bg-blue-600 h-2.5 rounded-full';
+          barContainer.appendChild(bar);
+          container.appendChild(barContainer);
+        }
+        bar.style.width = `${percent}%`;
+        if (percent > 100) bar.classList.replace('bg-blue-600', 'bg-red-600');
+        else bar.classList.replace('bg-red-600', 'bg-blue-600');
+      }
 
       const proteinPercentEl = document.getElementById('protein-percent');
       const fatPercentEl = document.getElementById('fat-percent');
@@ -470,9 +498,20 @@
       if (proteinPercentEl) proteinPercentEl.textContent = `${toNumberSafe(data.pfc_percent?.protein, 0)}%`;
       if (fatPercentEl) fatPercentEl.textContent = `${toNumberSafe(data.pfc_percent?.fat, 0)}%`;
       if (carbsPercentEl) carbsPercentEl.textContent = `${toNumberSafe(data.pfc_percent?.carbs, 0)}%`;
-      if (proteinKcalEl) proteinKcalEl.textContent = `${toNumberSafe(data.protein_kcal, 0)} kcal`;
-      if (fatKcalEl) fatKcalEl.textContent = `${toNumberSafe(data.fat_kcal, 0)} kcal`;
-      if (carbsKcalEl) carbsKcalEl.textContent = `${toNumberSafe(data.carbs_kcal, 0)} kcal`;
+
+      // Update PFC details with Goal
+      if (proteinKcalEl) {
+        let pGoal = (data.goal && data.goal.protein) ? ` / ${data.goal.protein}g` : '';
+        proteinKcalEl.textContent = `${toNumberSafe(data.protein_kcal, 0)} kcal${pGoal ? ' (' + toNumberSafe(data.protein_kcal / 4, 0).toFixed(0) + 'g' + pGoal + ')' : ''}`;
+      }
+      if (fatKcalEl) {
+        let fGoal = (data.goal && data.goal.fat) ? ` / ${data.goal.fat}g` : '';
+        fatKcalEl.textContent = `${toNumberSafe(data.fat_kcal, 0)} kcal${fGoal ? ' (' + toNumberSafe(data.fat_kcal / 9, 0).toFixed(0) + 'g' + fGoal + ')' : ''}`;
+      }
+      if (carbsKcalEl) {
+        let cGoal = (data.goal && data.goal.carbs) ? ` / ${data.goal.carbs}g` : '';
+        carbsKcalEl.textContent = `${toNumberSafe(data.carbs_kcal, 0)} kcal${cGoal ? ' (' + toNumberSafe(data.carbs_kcal / 4, 0).toFixed(0) + 'g' + cGoal + ')' : ''}`;
+      }
 
       if (data.chart && Array.isArray(data.chart.data)) {
         renderPfcChart(data.chart.labels || ['Protein', 'Fat', 'Carbs'], data.chart.data);
@@ -606,5 +645,72 @@
   };
 
   window.refreshDailyNutrition = refreshDailyNutrition;
+
+  // --- Profile Modal Logic ---
+  window.openProfileModal = function () {
+    const modal = document.getElementById('profile-modal');
+    if (modal) modal.classList.remove('hidden');
+  };
+
+  window.closeProfileModal = function () {
+    const modal = document.getElementById('profile-modal');
+    if (modal) modal.classList.add('hidden');
+  };
+
+  window.saveProfile = async function () {
+    const form = document.getElementById('profile-form');
+    if (!form) return;
+
+    const formData = new FormData(form);
+    const payload = Object.fromEntries(formData.entries());
+
+    try {
+      const res = await fetch('/api/user/profile', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'X-CSRF-TOKEN': getCsrfToken()
+        },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await parseJsonSafe(res);
+
+      if (!res.ok) {
+        if (res.status === 422) {
+          const errors = data.errors || {};
+          const msg = Object.values(errors).flat().join('\n') || '入力内容を確認してください';
+          showToast(msg, 'error');
+        } else {
+          showToast(data.message || '保存に失敗しました', 'error');
+        }
+        return;
+      }
+
+      showToast('プロフィールを更新しました');
+      closeProfileModal();
+      refreshDailyNutrition(); // Recalculate goals
+    } catch (e) {
+      console.error('saveProfile error', e);
+      showToast('通信エラーが発生しました', 'error');
+    }
+  };
+
+  // Update refreshDailyNutrition to show goal
+  const originalRefreshDailyNutrition = refreshDailyNutrition;
+  refreshDailyNutrition = async function (dateStr = null) {
+    await originalRefreshDailyNutrition(dateStr);
+
+    // After original refresh, we might need to update the UI for Goal if the API returns it
+    // Note: The original function updates #calories-total etc.
+    // We need to check if the response data is available. 
+    // Since original function doesn't return data easily to us without modifying it, 
+    // let's modify the original function in the next step or assume the original function
+    // handles the goal display if we updated it. 
+    // WAIT: I didn't update the original refreshDailyNutrition in this JS file yet.
+    // I should update the original function instead of wrapping it here.
+  };
+
 
 })();

@@ -24,6 +24,11 @@ class User extends Authenticatable
         'email',
         'password',
         'is_admin',
+        'height',
+        'weight',
+        'age',
+        'gender',
+        'activity_level',
     ];
 
     /**
@@ -46,6 +51,8 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'gender' => \App\Enums\Gender::class,
+            'activity_level' => \App\Enums\ActivityLevel::class,
         ];
     }
 

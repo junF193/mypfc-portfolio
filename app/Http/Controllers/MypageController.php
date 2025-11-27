@@ -8,9 +8,8 @@ use App\Services\FavoriteListService;
 use Illuminate\Http\Request;
 use App\Models\FavoriteFood;
 use Illuminate\Support\Facades\Log;
-
-
-
+use App\Services\TDEEService;
+use App\Http\Requests\UpdateProfileRequest;
 
 class MypageController extends Controller
 {
@@ -20,20 +19,21 @@ class MypageController extends Controller
     protected FoodSuggestionService $foodSuggestionService;
     protected DailyNutritionService $dailyNutritionService;
     protected FavoriteListService $favoriteListService;
-
-
+    protected TDEEService $tdeeService;
 
     /**
      * 新しい、コントローラーの、インスタンスを、生成する
      */
-    public function __construct(FoodSuggestionService $foodSuggestionService ,
-     DailyNutritionService $dailyNutritionService,
-      FavoriteListService $favoriteListService)
-    {
+    public function __construct(
+        FoodSuggestionService $foodSuggestionService,
+        DailyNutritionService $dailyNutritionService,
+        FavoriteListService $favoriteListService,
+        TDEEService $tdeeService
+    ) {
         $this->foodSuggestionService = $foodSuggestionService;
         $this->dailyNutritionService = $dailyNutritionService;
         $this->favoriteListService = $favoriteListService;
-
+        $this->tdeeService = $tdeeService;
     }
 
     /**
@@ -49,8 +49,6 @@ class MypageController extends Controller
             ], 401);
         }
 
-       
-
         // サービスを、呼び出し、推薦リストを、取得する
         $suggestions = $this->foodSuggestionService->getFrequentlyUsedFoods($user->id);
 
@@ -61,24 +59,14 @@ class MypageController extends Controller
         $favoriteIds = [];
 
             if ($suggestionIds->isNotEmpty()) {
-
-
-        
-        $favoriteIds = $this->favoriteListService->getFavoriteSourceIdsByUserAndLogs($user, $suggestionIds->all());
-
-
+                $favoriteIds = $this->favoriteListService->getFavoriteSourceIdsByUserAndLogs($user, $suggestionIds->all());
             }
-
-
-
-
-
-
 
         // 取得した、データを、ビューに、渡す
         return view('mypage.index', [
             'suggestions' => $suggestions,
             'favoriteIds' => $favoriteIds,
+            'user' => $user, // Pass user for profile data
         ]);
     }
 
@@ -89,7 +77,18 @@ class MypageController extends Controller
         return response()->json($history);
     }
 
-  public function dailyNutrition(Request $request)
+    public function updateProfile(UpdateProfileRequest $request)
+    {
+        $user = $request->user();
+        $user->update($request->validated());
+
+        return response()->json([
+            'message' => 'プロフィールを更新しました',
+            'user' => $user,
+        ]);
+    }
+
+    public function dailyNutrition(Request $request)
     {
         $validated = $request->validate([
             'date' => 'nullable|date_format:Y-m-d',
@@ -101,6 +100,16 @@ class MypageController extends Controller
         try {
             $data = $this->dailyNutritionService->getDailyTotals($user->id, $date);
 
+            // Calculate Targets
+            $tdee = $this->tdeeService->calculateTDEE($user);
+            $targets = $this->tdeeService->calculateTargetPFC($tdee);
+
+            $data['goal'] = [
+                'calories' => $tdee,
+                'protein' => $targets['protein'],
+                'fat' => $targets['fat'],
+                'carbs' => $targets['carbs'],
+            ];
             
             return response()->json($data);
         } catch (\Throwable $e) {
