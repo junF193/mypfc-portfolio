@@ -128,7 +128,7 @@ class FoodController extends Controller
                     'consumed_at' => $consumedAt,
                 ]);
             });
-            return $this->success(new HistoryResource($newFoodLog), '履歴から登録しました', 201);
+            return $this->success($newFoodLog, '履歴から登録しました', 201);
 
         } catch (\Throwable $e) {
              Log::error('Failed to create food log from history: ' . $e->getMessage(), [

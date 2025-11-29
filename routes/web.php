@@ -84,6 +84,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/food/store', [FoodController::class, 'store'])->name('food.store');
     Route::get('/food-suggestions', [FoodController::class, 'getSuggestions'])->name('food-suggestions.index');
     Route::post('/food-logs', [FoodController::class, 'storeManual'])->name('food-logs.store');
+    Route::post('/food-logs/history', [FoodController::class, 'storeFromHistory'])->name('food-logs.store_history');
 
 
     

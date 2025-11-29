@@ -52,6 +52,7 @@
             </button>
             <button type="button"
                     class="select-history-btn text-sm bg-indigo-500 text-white px-3 py-1 rounded hover:bg-indigo-600"
+                    :data-food-log-id="fav.source_food_log_id"
                     :data-favorite-id="fav.id"
                     :data-food-name="fav.food_name || ''"
                     data-meal-type="">
@@ -217,7 +218,13 @@ export default {
         this.errorMessage = ''; 
 
         try {
-            const url = `${this.toggleUrlBase}/${favoriteId}`;
+            let url = this.toggleUrlBase;
+            if (url.includes('__ID__')) {
+                url = url.replace('__ID__', favoriteId);
+            } else {
+                 if (!url.endsWith('/')) url += '/';
+                 url += favoriteId;
+            }
             const csrfToken = this.getCsrfToken();
 
             const res = await fetch(url, {

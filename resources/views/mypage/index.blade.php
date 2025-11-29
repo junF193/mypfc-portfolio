@@ -190,6 +190,7 @@ window.MYPAGE_CONFIG = {
     favoritesStoreUrl: @json(route('favorites.store')),
     favoritesDestroyBase: '/api/favorites/',
     foodLogsStoreUrl: @json(route('food-logs.store')),
+    foodLogsHistoryStoreUrl: @json(route('food-logs.store_history')),
     dailyNutritionUrl: @json(route('mypage.daily-nutrition')),
     fetchFavoritesUrl: @json(route('favorites.index')),
 };

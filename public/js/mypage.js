@@ -18,6 +18,7 @@
   const FAVORITES_STORE_URL = String(cfg.favoritesStoreUrl || '/api/favorites');
   const FAVORITES_DESTROY_BASE = String(cfg.favoritesDestroyBase || '/api/favorites/');
   const FOODLOGS_STORE_URL = String(cfg.foodLogsStoreUrl || '/food-logs');
+  const FOODLOGS_HISTORY_STORE_URL = String(cfg.foodLogsHistoryStoreUrl || '/food-logs/history');
   const DAILY_NUTRITION_URL = String(cfg.dailyNutritionUrl || '/mypage/daily-nutrition');
 
   function getCsrfToken() {
@@ -117,7 +118,7 @@
     if (!button || !button.dataset) return;
     const foodLogId = button.dataset.foodLogId;
     if (!foodLogId) {
-      showToast('対象のIDが不明です', 'error');
+      showToast('お気に入り登録に失敗しました', 'error');
       return;
     }
 
@@ -227,7 +228,7 @@
 
 
 
-    const res = await fetch(FOODLOGS_STORE_URL, {
+    const res = await fetch(FOODLOGS_HISTORY_STORE_URL, {
       method: 'POST',
       credentials: 'include',
       headers: {
@@ -320,8 +321,12 @@
     const percentInput = document.getElementById('custom-percent');
     const percent = toNumberSafe(percentInput?.value, 100);
 
-    if (!id) {
-      showToast('選択した履歴が不明です', 'error');
+    if (!id || id === 'undefined' || id === 'null') {
+      showToast('選択した履歴が無効です', 'error');
+      return;
+    }
+    if (Number.isNaN(Number(id))) {
+      showToast('選択した履歴IDが無効です', 'error');
       return;
     }
     if (!Number.isInteger(percent) || percent < 25 || percent > 9999) {
