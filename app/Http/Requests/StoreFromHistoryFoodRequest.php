@@ -25,8 +25,8 @@ class StoreFromHistoryFoodRequest extends FormRequest
         return [
             'from_history_id' => ['nullable', 'integer', 'exists:food_logs,id'],
             'meal_type' => ['required', 'string', Rule::in(['breakfast', 'lunch', 'dinner', 'snack'])],
-            'multiplier' => ['required', 'numeric', 'min:0.25', 'max:999.999'],
-            'percent' => ['nullable', 'numeric', 'min:25', 'max:9999'],
+            'multiplier' => ['required', 'numeric', 'min:0.01', 'max:999.999'],
+            'percent' => ['nullable', 'numeric', 'min:1', 'max:9999'],
             'date' => ['nullable', 'date_format:Y-m-d'],
         ];
     }

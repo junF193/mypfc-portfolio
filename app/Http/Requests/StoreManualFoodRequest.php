@@ -29,7 +29,7 @@ class StoreManualFoodRequest extends FormRequest
             'fat_100g' => ['nullable', 'numeric', 'max:999999.99'],
             'carbohydrates_100g' => ['nullable', 'numeric', 'max:999999.99'],
             'meal_type' => ['required', 'string', Rule::in(['breakfast', 'lunch', 'dinner', 'snack'])],
-            'multiplier' => ['nullable', 'numeric', 'min:0.25', 'max:999.999'],
+            'multiplier' => ['nullable', 'numeric', 'min:0.01', 'max:999.999'],
             'consumed_at' => ['nullable', 'date_format:Y-m-d'],
         ];
     }

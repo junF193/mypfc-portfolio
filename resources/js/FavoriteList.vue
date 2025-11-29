@@ -16,19 +16,51 @@
         
         <template v-if="editingFavoriteId === fav.id">
           <!-- 編集モード -->
-          <div class="flex-grow space-y-2">
-            <input type="text" v-model="editedFavorite.food_name" class="border p-1 w-full rounded text-sm" placeholder="食品名">
-            <div class="grid grid-cols-2 gap-2 text-xs">
-              <input type="number" v-model.number="editedFavorite.energy_kcal_100g" class="border p-1 rounded" placeholder="カロリー(kcal)">
-              <input type="number" v-model.number="editedFavorite.proteins_100g" class="border p-1 rounded" placeholder="タンパク質(g)">
-              <input type="number" v-model.number="editedFavorite.fat_100g" class="border p-1 rounded" placeholder="脂質(g)">
-              <input type="number" v-model.number="editedFavorite.carbohydrates_100g" class="border p-1 rounded" placeholder="炭水化物(g)">
+          <div class="flex-grow space-y-3 p-1">
+            <div>
+              <label class="block text-xs font-bold text-gray-700 mb-1">食品名</label>
+              <input type="text" v-model="editedFavorite.food_name" class="border p-1 w-full rounded text-sm" placeholder="食品名">
             </div>
-            <textarea v-model="editedFavorite.memo" class="border p-1 w-full rounded text-xs" rows="2" placeholder="メモ"></textarea>
+            
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-bold text-gray-700 mb-1">エネルギー</label>
+                <div class="flex items-center">
+                  <input type="number" v-model.number="editedFavorite.energy_kcal_100g" class="border p-1 w-full rounded text-sm" placeholder="0">
+                  <span class="ml-1 text-xs text-gray-500">kcal</span>
+                </div>
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-gray-700 mb-1">タンパク質(P)</label>
+                <div class="flex items-center">
+                  <input type="number" v-model.number="editedFavorite.proteins_100g" class="border p-1 w-full rounded text-sm" placeholder="0">
+                  <span class="ml-1 text-xs text-gray-500">g</span>
+                </div>
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-gray-700 mb-1">脂質(F)</label>
+                <div class="flex items-center">
+                  <input type="number" v-model.number="editedFavorite.fat_100g" class="border p-1 w-full rounded text-sm" placeholder="0">
+                  <span class="ml-1 text-xs text-gray-500">g</span>
+                </div>
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-gray-700 mb-1">炭水化物(C)</label>
+                <div class="flex items-center">
+                  <input type="number" v-model.number="editedFavorite.carbohydrates_100g" class="border p-1 w-full rounded text-sm" placeholder="0">
+                  <span class="ml-1 text-xs text-gray-500">g</span>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-gray-700 mb-1">メモ</label>
+              <textarea v-model="editedFavorite.memo" class="border p-1 w-full rounded text-xs" rows="2" placeholder="メモ"></textarea>
+            </div>
           </div>
-          <div class="flex items-center space-x-2 ml-2">
-            <button type="button" @click="updateFavorite(fav.id)" :disabled="isSaving" class="text-sm bg-green-500 text-white px-2 py-1 rounded hover:bg-green-600">保存</button>
-            <button type="button" @click="cancelEditing()" :disabled="isSaving" class="text-sm bg-gray-300 text-gray-800 px-2 py-1 rounded hover:bg-gray-400">キャンセル</button>
+          <div class="flex items-center space-x-2 ml-2 flex-shrink-0">
+            <button type="button" @click="updateFavorite(fav.id)" :disabled="isSaving" class="text-sm bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600 whitespace-nowrap">保存</button>
+            <button type="button" @click="cancelEditing()" :disabled="isSaving" class="text-sm bg-gray-300 text-gray-800 px-3 py-1 rounded hover:bg-gray-400 whitespace-nowrap">キャンセル</button>
           </div>
         </template>
 
@@ -45,7 +77,7 @@
           </div>
 
           <div class="flex items-center space-x-2 ml-2">
-            <button type="button" @click="startEditing(fav)" class="text-sm bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600" title="編集">
+            <button type="button" @click="startEditing(fav)" class="text-sm bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600" title="お気に入りを編集">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
               </svg>
@@ -251,7 +283,8 @@ export default {
 
             const index = this.favorites.findIndex(fav => fav.id === favoriteId);
             if (index !== -1) {
-                this.$set(this.favorites, index, result.data); 
+                // Vue 3 fix: direct assignment instead of this.$set
+                this.favorites[index] = result.data; 
             }
             this.showToast(result.message || 'お気に入りを更新しました', 'success');
             this.cancelEditing(); 

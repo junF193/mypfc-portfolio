@@ -253,6 +253,10 @@
     const modal = document.getElementById('suggestion-modal');
     if (!modal) return;
 
+    // タイトルを「食事の登録（量を調整）」に変更
+    const titleEl = document.getElementById('suggestion-title');
+    if (titleEl) titleEl.textContent = '食事の登録（量を調整）';
+
     const id = btn.dataset.foodLogId || btn.closest('li')?.dataset.foodLogId;
     const energy = toNumberSafe(btn.dataset.energy || btn.dataset.energyKcal100g || 0, 0);
     const proteins = toNumberSafe(btn.dataset.proteins || 0, 0);
@@ -329,8 +333,8 @@
       showToast('選択した履歴IDが無効です', 'error');
       return;
     }
-    if (!Number.isInteger(percent) || percent < 25 || percent > 9999) {
-      showToast('分量は 25 ~ 9999 の整数で指定してください', 'error');
+    if (!Number.isInteger(percent) || percent < 1 || percent > 9999) {
+      showToast('分量は 1 ~ 9999 の整数で指定してください', 'error');
       return;
     }
 
@@ -390,6 +394,16 @@
     tabs.forEach(t => {
       t.setAttribute('aria-selected', t.dataset.tab === tabName ? 'true' : 'false');
     });
+
+    // タブ切り替え時にタイトルをリセット
+    const titleEl = document.getElementById('suggestion-title');
+    if (titleEl) {
+      if (tabName === 'modal-favorites') {
+        titleEl.textContent = 'お気に入りから選択';
+      } else {
+        titleEl.textContent = '履歴から選択';
+      }
+    }
   }
 
   // --- Daily nutrition / Chart rendering ---
@@ -587,9 +601,16 @@
     const percentInput = document.getElementById('custom-percent');
     if (percentInput) {
       percentInput.addEventListener('input', function () {
+        // 入力中は自由に入力させる（空文字も許容）
+        // プレビュー更新だけ行う
+        updatePreviewFromPercent();
+      });
+
+      // フォーカスが外れた時にバリデーションと補正を行う
+      percentInput.addEventListener('blur', function () {
         let v = parseInt(percentInput.value, 10);
-        if (Number.isNaN(v)) v = 100;
-        if (v < 1) v = 1;
+        if (Number.isNaN(v) || v < 1) v = 1; // 最低1%
+        if (v > 9999) v = 9999;
         percentInput.value = v;
         updatePreviewFromPercent();
       });

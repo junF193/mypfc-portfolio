@@ -72,8 +72,8 @@
                           data-fat="{{ $item->fat_100g ?? 0 }}"
                           data-carbs="{{ $item->carbohydrates_100g ?? 0 }}"
                           data-food-name="{{ $dName }}"
-                          data-meal-type="{{ $item->meal_type ?? '' }}">
-                    選択して編集
+                    data-meal-type="{{ $item->meal_type ?? '' }}">
+                    食事に登録
                   </button>
 
                   {{-- ハート（お気に入り） --}}
@@ -110,8 +110,8 @@
 
           <div class="flex items-center gap-3 mb-3">
             <label class="text-sm whitespace-nowrap">食べた量（%）</label>
-            <input id="custom-percent" type="number" min="25" max="9999" step="1" class="border p-1 rounded w-28" />
-            <div class="text-sm text-gray-500">（25 〜 9999）</div>
+            <input id="custom-percent" type="number" min="1" max="9999" step="1" class="border p-1 rounded w-28" />
+            <div class="text-sm text-gray-500">（1 〜 9999）</div>
           </div>
 
           <div class="text-sm text-gray-700 mb-4">
