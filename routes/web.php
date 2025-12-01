@@ -78,13 +78,8 @@ require __DIR__.'/auth.php';
 Route::middleware('auth')->group(function () {
     Route::get('/mypage',[MypageController::class, 'index'])->name('mypage.index');
     Route::get('/mypage/daily-nutrition', [MypageController::class, 'dailyNutrition'])->name('mypage.daily-nutrition');
-    Route::get('/food/search', [FoodController::class, 'search'])->name('food.search');
-    Route::get('/food/log/create', [FoodController::class, 'create'])->name('food-log.create');
-    Route::get('/food/barcode', [FoodController::class, 'getFoodByBarcode'])->name('food.barcode');
-    Route::post('/food/store', [FoodController::class, 'store'])->name('food.store');
-    Route::get('/food-suggestions', [FoodController::class, 'getSuggestions'])->name('food-suggestions.index');
-    Route::post('/food-logs', [FoodController::class, 'storeManual'])->name('food-logs.store');
-    Route::post('/food-logs/history', [FoodController::class, 'storeFromHistory'])->name('food-logs.store_history');
+    
+    // Legacy food routes removed (moved to API)
 
 
     

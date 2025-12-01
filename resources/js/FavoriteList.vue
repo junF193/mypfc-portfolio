@@ -83,11 +83,8 @@
               </svg>
             </button>
             <button type="button"
-                    class="select-history-btn text-sm bg-indigo-500 text-white px-3 py-1 rounded hover:bg-indigo-600"
-                    :data-food-log-id="fav.source_food_log_id"
-                    :data-favorite-id="fav.id"
-                    :data-food-name="fav.food_name || ''"
-                    data-meal-type="">
+                    @click="selectFavorite(fav)"
+                    class="text-sm bg-indigo-500 text-white px-3 py-1 rounded hover:bg-indigo-600">
               食事に登録
             </button>
 
@@ -102,6 +99,34 @@
         </template>
       </li>
     </ul>
+
+    <!-- 選択後の確認・登録モーダル -->
+    <div v-if="selectedFavorite" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div class="bg-white p-4 rounded-lg w-full max-w-sm">
+        <h3 class="font-bold text-lg mb-2">{{ selectedFavorite.food_name }}</h3>
+        
+        <div class="mb-4">
+             <label class="block mb-1 font-semibold text-sm">量（%）</label>
+             <div class="flex items-center gap-2">
+                <input type="number" v-model.number="percentInput" min="1" max="9999" step="1" class="border p-2 rounded w-24 text-sm">
+                <span class="text-sm text-gray-600">%</span>
+             </div>
+             <div class="text-xs text-gray-500 mt-1">
+                kcal: {{ calculateNutrient(selectedFavorite.energy_kcal_100g) }} / 
+                P: {{ calculateNutrient(selectedFavorite.proteins_100g) }} / 
+                F: {{ calculateNutrient(selectedFavorite.fat_100g) }} / 
+                C: {{ calculateNutrient(selectedFavorite.carbohydrates_100g) }}
+             </div>
+        </div>
+
+        <div class="flex justify-end gap-2">
+          <button @click="selectedFavorite = null" class="bg-gray-300 text-gray-800 px-4 py-2 rounded text-sm">キャンセル</button>
+          <button @click="registerFavorite" :disabled="isRegistering" class="bg-green-500 text-white px-4 py-2 rounded text-sm">
+            {{ isRegistering ? '登録中...' : '登録' }}
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -111,7 +136,9 @@ export default {
   props: {
     initialFavorites: { type: Array, default: () => [] },
     fetchUrl: { type: String, default: '/api/favorites' },
-    toggleUrlBase: { type: String, default: '/api/favorites' }
+    toggleUrlBase: { type: String, default: '/api/favorites' },
+    mealType: { type: String, default: '' },
+    date: { type: String, default: () => new Date().toISOString().slice(0, 10) }
   },
   data() {
     return {
@@ -121,6 +148,9 @@ export default {
       editingFavoriteId: null, // 編集中のfavorite.id
       editedFavorite: {},      // 編集フォームの入力値
       isSaving: false,         // 保存処理中かどうかのフラグ
+      selectedFavorite: null,  // 登録用に選択されたお気に入り
+      percentInput: 100,
+      isRegistering: false,
     };
   },
   methods: {
@@ -294,6 +324,63 @@ export default {
             console.error('updateFavorite error', e);
         } finally {
             this.isSaving = false;
+        }
+    },
+
+    selectFavorite(fav) {
+        this.selectedFavorite = fav;
+        this.percentInput = 100;
+    },
+
+    calculateNutrient(valPer100g) {
+        if (valPer100g == null) return '-';
+        const mult = this.percentInput / 100;
+        return (valPer100g * mult).toFixed(1);
+    },
+
+    async registerFavorite() {
+        if (!this.selectedFavorite) return;
+        this.isRegistering = true;
+
+        const payload = {
+            food_name: this.selectedFavorite.food_name,
+            energy_kcal_100g: this.selectedFavorite.energy_kcal_100g,
+            proteins_100g: this.selectedFavorite.proteins_100g,
+            fat_100g: this.selectedFavorite.fat_100g,
+            carbohydrates_100g: this.selectedFavorite.carbohydrates_100g,
+            meal_type: this.mealType,
+            multiplier: this.percentInput / 100,
+            consumed_at: this.date,
+            source_type: 'favorite',
+            source_food_number: this.selectedFavorite.id,
+        };
+
+        try {
+            const csrfToken = this.getCsrfToken();
+            const res = await fetch('/api/food-logs', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken
+                },
+                body: JSON.stringify(payload)
+            });
+
+            const result = await res.json();
+
+            if (!res.ok) {
+                throw new Error(result.message || '登録に失敗しました');
+            }
+
+            this.$emit('registered', result.data);
+            this.selectedFavorite = null;
+
+        } catch (e) {
+            console.error('Registration failed', e);
+            this.showError(e.message || '登録に失敗しました');
+        } finally {
+            this.isRegistering = false;
         }
     }
   },

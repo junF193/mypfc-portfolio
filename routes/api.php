@@ -65,14 +65,14 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/user/profile', [App\Http\Controllers\MypageController::class, 'updateProfile'])->name('user.profile.update');
 });
 
-// ✅ 将来的に追加する API エンドポイント
-// Route::middleware('auth:sanctum')->group(function () {
-//     Route::apiResource('food-logs', FoodLogController::class);
-//     Route::get('/nutrition-summary', [NutritionController::class, 'summary']);
-// });
+// Food & FoodLog API
+Route::middleware('auth:sanctum')->group(function () {
+    // Food Search
+    Route::get('/food/search', [App\Http\Controllers\Api\FoodController::class, 'search'])->name('api.food.search');
+    Route::get('/food/barcode', [App\Http\Controllers\Api\FoodController::class, 'getFoodByBarcode'])->name('api.food.barcode');
 
-//Route::get('/food/search', [FoodController::class, 'search'])->name('food.search');
-
-//Route::post('/food/store', [FoodController::class, 'store'])->name('food.store');
-
-//Route::get('/food/barcode', [FoodController::class, 'getFoodByBarcode'])->name('food.barcode');
+    // Food Logs
+    Route::get('/food-suggestions', [App\Http\Controllers\Api\FoodLogController::class, 'getSuggestions'])->name('api.food-suggestions.index');
+    Route::post('/food-logs', [App\Http\Controllers\Api\FoodLogController::class, 'storeManual'])->name('api.food-logs.store');
+    Route::post('/food-logs/history', [App\Http\Controllers\Api\FoodLogController::class, 'storeFromHistory'])->name('api.food-logs.store_history');
+});
