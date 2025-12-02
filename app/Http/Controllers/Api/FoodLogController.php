@@ -20,9 +20,9 @@ class FoodLogController extends Controller
         $this->foodSuggestionService = $foodSuggestionService;
     }
 
-    public function getSuggestions()
+    public function getSuggestions(Request $request)
     {
-        $suggestions = $this->foodSuggestionService->getFrequentlyUsedFoods();
+        $suggestions = $this->foodSuggestionService->getFrequentlyUsedFoods($request->user()->id);
         return response()->json($suggestions);
     }
 

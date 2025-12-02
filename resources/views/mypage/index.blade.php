@@ -14,23 +14,11 @@
     @foreach(['breakfast'=>'朝食','lunch'=>'昼食','dinner'=>'夕食','snack'=>'間食'] as $mealKey => $mealLabel)
       <div class="mb-4 p-4 border rounded shadow">
         <h2 class="text-xl font-semibold mb-3">{{ $mealLabel }}</h2>
-        <div class="flex items-center space-x-4">
           <button type="button" 
-                  onclick="window.dispatchEvent(new CustomEvent('open-food-entry-modal', { detail: { mealType: '{{ $mealKey }}', tab: 'manual' } }))"
-                  class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
-            手入力で登録
+                  class="js-open-food-modal bg-indigo-500 text-white px-4 py-2 rounded hover:bg-indigo-600 flex items-center"
+                  data-meal-type="{{ $mealKey }}">
+            <span class="mr-1 text-lg font-bold">＋</span> 追加
           </button>
-          <button type="button" 
-                  onclick="window.dispatchEvent(new CustomEvent('open-food-entry-modal', { detail: { mealType: '{{ $mealKey }}', tab: 'search' } }))"
-                  class="ml-4 bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
-            検索して登録
-          </button>
-          <button type="button" 
-                  onclick="window.dispatchEvent(new CustomEvent('open-food-entry-modal', { detail: { mealType: '{{ $mealKey }}', tab: 'history' } }))"
-                  class="ml-4 bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600">
-            履歴から選択
-          </button>
-        </div>
       </div>
     @endforeach
   </div>

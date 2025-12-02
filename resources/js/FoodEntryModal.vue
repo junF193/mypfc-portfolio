@@ -1,29 +1,41 @@
 <template>
+  <!-- モーダルが開いている場合のみ表示 (isOpenがtrueの時) -->
+  <!-- fixed inset-0 z-50: 画面全体を覆うオーバーレイ -->
   <div v-if="isOpen" class="fixed inset-0 bg-gray-800 bg-opacity-75 flex items-center justify-center z-50">
+    
+    <!-- モーダルのメインコンテンツコンテナ -->
+    <!-- w-11/12 md:w-2/3: 画面幅に応じたレスポンシブな幅設定 -->
     <div class="bg-white p-6 rounded shadow-lg w-11/12 md:w-2/3 lg:w-1/2 max-h-[90vh] overflow-y-auto">
+      
+      <!-- ヘッダー部分：タイトルと閉じるボタン -->
       <div class="flex items-start justify-between mb-4">
+        <!-- タイトル表示 (computedプロパティ title を使用して「朝食の登録」などを表示) -->
         <h3 class="text-xl font-semibold">{{ title }}</h3>
+        
+        <!-- 閉じるボタン (@clickでcloseメソッドを呼び出し) -->
         <button type="button" @click="close" aria-label="閉じる" class="text-gray-600 hover:text-gray-800 text-2xl leading-none">&times;</button>
       </div>
 
-      <!-- Tabs -->
+      <!-- タブナビゲーションエリア -->
       <div class="mb-4 border-b border-gray-200">
         <nav class="-mb-px flex space-x-4 overflow-x-auto" aria-label="Tabs">
+          <!-- tabs配列をループしてタブボタンを生成 -->
           <button v-for="tab in tabs" :key="tab.id"
-                  @click="currentTab = tab.id"
+                  @click="currentTab = tab.id" 
                   :class="[
                     currentTab === tab.id
-                      ? 'border-indigo-500 text-indigo-600'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300',
+                      ? 'border-indigo-500 text-indigo-600' // 選択中のタブのスタイル（青色）
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300', // 非選択タブのスタイル
                     'whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm'
                   ]">
-            {{ tab.name }}
+            {{ tab.name }} <!-- タブ名（履歴、お気に入り、など） -->
           </button>
         </nav>
       </div>
 
-      <!-- Content -->
+      <!-- コンテンツエリア：選択されたタブの中身を表示 -->
       <div class="mt-4">
+        <!-- keep-alive: タブを切り替えても入力内容やスクロール位置などの状態を維持する -->
         <keep-alive>
           <component :is="currentTabComponent" 
                      :meal-type="mealType" 
@@ -36,13 +48,14 @@
 </template>
 
 <script>
+// 各タブの中身となる子コンポーネントのインポート
 import HistoryList from './HistoryList.vue';
-import FavoriteList from './FavoriteList.vue'; // Existing component
+import FavoriteList from './FavoriteList.vue'; // 既存のコンポーネント
 import ManualEntry from './ManualEntry.vue';
 import SearchEntry from './SearchEntry.vue';
 
 export default {
-  name: 'FoodEntryModal',
+  name: 'FoodEntryModal', // コンポーネント名
   components: {
     HistoryList,
     FavoriteList,
@@ -51,11 +64,17 @@ export default {
   },
   data() {
     return {
-      isOpen: false,
-      mealType: '',
-      date: new Date().toISOString().slice(0, 10),
-      currentTab: 'history',
-      tabs: [
+      isOpen: false, // モーダルの表示状態 (trueで表示、falseで非表示)
+      mealType: '', // 食事タイプ (breakfast, lunch, dinner, snack)
+      date: (() => {
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+      })(), // 日付 (デフォルトは今日 YYYY-MM-DD - ローカル時間)
+      currentTab: 'history', // 現在選択されているタブID (初期値は履歴)
+      tabs: [ // タブの定義リスト
         { id: 'history', name: '履歴' },
         { id: 'favorites', name: 'お気に入り' },
         { id: 'manual', name: '手入力' },
@@ -64,6 +83,7 @@ export default {
     };
   },
   computed: {
+    // モーダルのタイトルを動的に生成するプロパティ
     title() {
       const mealLabels = {
         breakfast: '朝食',
@@ -71,9 +91,11 @@ export default {
         dinner: '夕食',
         snack: '間食'
       };
+      // mealTypeに対応する日本語ラベルを取得、なければ'食事'とする
       const label = mealLabels[this.mealType] || '食事';
-      return `${label}の登録`;
+      return `${label}の登録`; // 例: "朝食の登録"
     },
+    // 現在のタブIDに対応するコンポーネント名を返すプロパティ
     currentTabComponent() {
       switch (this.currentTab) {
         case 'history': return 'HistoryList';
@@ -85,35 +107,40 @@ export default {
     }
   },
   created() {
-    // Listen for global event to open modal
+    // コンポーネント作成時にグローバルイベントリスナーを登録
+    // 外部（mypage.jsなど）から 'open-food-entry-modal' イベントが発火されたら open メソッドを実行
     window.addEventListener('open-food-entry-modal', this.open);
   },
   beforeUnmount() {
+    // コンポーネント破棄時にイベントリスナーを削除 (メモリリーク防止のため必須)
     window.removeEventListener('open-food-entry-modal', this.open);
   },
   methods: {
+    // モーダルを開く処理
     open(event) {
-      this.mealType = event.detail.mealType;
-      this.date = event.detail.date || new Date().toISOString().slice(0, 10);
-      // Default to history or specific tab if requested
+      this.mealType = event.detail.mealType; // イベント詳細から食事タイプを取得
+      this.date = event.detail.date || new Date().toISOString().slice(0, 10); // 日付を取得
+      // 指定があればそのタブを開く、なければ履歴タブをデフォルトにする
       this.currentTab = event.detail.tab || 'history';
-      this.isOpen = true;
+      this.isOpen = true; // モーダルを表示状態にする
     },
+    // モーダルを閉じる処理
     close() {
       this.isOpen = false;
     },
+    // 食事登録完了時の処理（子コンポーネントから呼ばれる）
     handleRegistered(data) {
-      // Close modal
+      // モーダルを閉じる
       this.close();
       
-      // Notify user
+      // ユーザーに通知 (グローバルなトースト表示関数があれば使用、なければアラート)
       if (typeof window.showToast === 'function') {
           window.showToast('登録しました', 'success');
       } else {
           alert('登録しました');
       }
 
-      // Refresh daily nutrition
+      // 今日の栄養摂取状況を更新 (mypage.jsなどで定義されたグローバル関数呼び出し)
       if (typeof window.refreshDailyNutrition === 'function') {
           window.refreshDailyNutrition();
       }
