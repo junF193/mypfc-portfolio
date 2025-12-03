@@ -49,6 +49,14 @@ class MypageController extends Controller
             ], 401);
         }
 
+        // 日付パラメータの取得 (デフォルトは今日)
+        $dateStr = $request->input('date');
+        try {
+            $currentDate = $dateStr ? \Carbon\Carbon::parse($dateStr) : \Carbon\Carbon::today();
+        } catch (\Exception $e) {
+            $currentDate = \Carbon\Carbon::today();
+        }
+
         // サービスを、呼び出し、推薦リストを、取得する
         $suggestions = $this->foodSuggestionService->getFrequentlyUsedFoods($user->id);
 
@@ -62,11 +70,31 @@ class MypageController extends Controller
                 $favoriteIds = $this->favoriteListService->getFavoriteSourceIdsByUserAndLogs($user, $suggestionIds->all());
             }
 
+        // 1. 指定日のログを取得
+        $logs = $user->foodLogs()
+            ->whereDate('consumed_at', $currentDate)
+            ->get();
+
+        // 2. Collectionメソッドでグループ化と集計を一気に行う
+        // 結果: ['breakfast' => [Log, Log...], 'lunch' => [...]]
+        $groupedLogs = $logs->groupBy('meal_type');
+
+        // 結果: ['breakfast' => 450, 'lunch' => 800...]
+        $mealTotals = $groupedLogs->map(function ($group) {
+            return $group->sum(function ($log) {
+                // パーセントを考慮したカロリー計算
+                return $log->energy_kcal_100g * ($log->multiplier ?? 1);
+            });
+        });
+
         // 取得した、データを、ビューに、渡す
         return view('mypage.index', [
             'suggestions' => $suggestions,
             'favoriteIds' => $favoriteIds,
             'user' => $user, // Pass user for profile data
+            'groupedLogs' => $groupedLogs,
+            'mealTotals' => $mealTotals,
+            'currentDate' => $currentDate, // Viewへ渡す
         ]);
     }
 

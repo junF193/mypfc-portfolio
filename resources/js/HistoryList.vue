@@ -62,7 +62,16 @@ export default {
   name: 'HistoryList',
   props: {
     mealType: { type: String, required: true },
-    date: { type: String, default: () => new Date().toISOString().slice(0, 10) }
+    date: { 
+      type: String, 
+      default: () => {
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+      }
+    }
   },
   data() {
     return {
@@ -107,11 +116,12 @@ export default {
       const payload = {
         from_history_id: this.selectedItem.id,
         meal_type: this.mealType,
-        date: this.date,
+        consumed_at: this.date,
         multiplier: this.percentInput / 100,
       };
 
       try {
+        console.log('Posting date:', this.date); // Debug log
         await axios.get('/sanctum/csrf-cookie');
         const res = await axios.post('/api/food-logs/history', payload);
         

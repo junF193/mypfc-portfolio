@@ -67,7 +67,7 @@ class FoodLogController extends Controller
         $validated = $request->validated();
         $user = $request->user();
 
-        $consumedAt = $validated['date'] ?? Carbon::now('Asia/Tokyo')->toDateString();
+        $consumedAt = $validated['consumed_at'] ?? Carbon::now('Asia/Tokyo')->toDateString();
 
         $existingHistory = $user->foodLogs()->where('id', $validated['from_history_id'])->first();
                
@@ -105,5 +105,17 @@ class FoodLogController extends Controller
             ]);
             return response()->json(['message' => 'サーバーエラーが発生しました'], 500);
         }
+    }
+    public function destroy(Request $request, string $id)
+    {
+        // ログインユーザーに紐付いたログの中からIDを探す
+        // 他人のIDを指定された場合は 404 (ModelNotFound) になるため安全
+        $log = $request->user()
+            ->foodLogs()
+            ->findOrFail($id);
+
+        $log->delete();
+
+        return response()->json(['message' => '削除しました']);
     }
 }

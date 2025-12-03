@@ -10,17 +10,72 @@
   </div>
 
   {{-- セクションボタン群（朝/昼/夕/間食） --}}
-  <div class="grid grid-cols-1 gap-4">
-    @foreach(['breakfast'=>'朝食','lunch'=>'昼食','dinner'=>'夕食','snack'=>'間食'] as $mealKey => $mealLabel)
-      <div class="mb-4 p-4 border rounded shadow">
-        <h2 class="text-xl font-semibold mb-3">{{ $mealLabel }}</h2>
-          <button type="button" 
-                  class="js-open-food-modal bg-indigo-500 text-white px-4 py-2 rounded hover:bg-indigo-600 flex items-center"
-                  data-meal-type="{{ $mealKey }}">
-            <span class="mr-1 text-lg font-bold">＋</span> 追加
-          </button>
-      </div>
-    @endforeach
+  <!-- Date Navigation -->
+  <div class="flex justify-between items-center mb-6 bg-white p-4 rounded-lg shadow">
+    <a href="{{ route('mypage.index', ['date' => $currentDate->copy()->subDay()->format('Y-m-d')]) }}" class="text-indigo-600 hover:text-indigo-800 font-bold">
+      &lt; 前日
+    </a>
+    <div class="text-center">
+      <h2 class="text-xl font-bold text-gray-800">
+        {{ $currentDate->format('Y年m月d日') }}
+        <span class="text-sm text-gray-500 ml-2">({{ $currentDate->isoFormat('ddd') }})</span>
+      </h2>
+      <input type="hidden" id="nutrition-date" value="{{ $currentDate->format('Y-m-d') }}">
+    </div>
+    <a href="{{ route('mypage.index', ['date' => $currentDate->copy()->addDay()->format('Y-m-d')]) }}" class="text-indigo-600 hover:text-indigo-800 font-bold">
+      翌日 &gt;
+    </a>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          @php
+            $mealTypes = [
+              'breakfast' => '朝食',
+              'lunch' => '昼食',
+              'dinner' => '夕食',
+              'snack' => '間食'
+            ];
+          @endphp
+
+          @foreach ($mealTypes as $mealKey => $mealLabel)
+          <div class="bg-white p-4 rounded-lg shadow">
+            <div class="flex justify-between items-center mb-4">
+              <h3 class="text-lg font-bold text-gray-700">{{ $mealLabel }}</h3>
+              <div class="text-gray-600">
+                <span class="font-bold text-xl">{{ number_format($mealTotals->get($mealKey, 0)) }}</span> kcal
+              </div>
+            </div>
+
+            <!-- Food List -->
+            @if(isset($groupedLogs[$mealKey]) && $groupedLogs[$mealKey]->isNotEmpty())
+            <ul class="mb-4 space-y-2">
+              @foreach($groupedLogs[$mealKey] as $log)
+              <li class="flex justify-between items-center border-b pb-2 text-sm">
+                <div class="flex-1">
+                  <div class="font-medium text-gray-800">{{ $log->food_name }}</div>
+                  <div class="text-xs text-gray-500">
+                    {{ number_format($log->energy_kcal_100g * ($log->multiplier ?? 1)) }} kcal
+                  </div>
+                </div>
+                <button type="button" 
+                        class="text-red-400 hover:text-red-600 ml-2 p-1"
+                        onclick="deleteFoodLog({{ $log->id }})">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                </button>
+              </li>
+              @endforeach
+            </ul>
+            @endif
+
+            <button type="button" 
+                    class="js-open-food-modal w-full bg-indigo-50 text-indigo-600 px-4 py-2 rounded hover:bg-indigo-100 flex items-center justify-center transition-colors"
+                    data-meal-type="{{ $mealKey }}">
+              <span class="mr-1 text-lg font-bold">＋</span> 追加
+            </button>
+          </div>
+          @endforeach
   </div>
 
   {{-- 新しいVueモーダル用コンテナ --}}

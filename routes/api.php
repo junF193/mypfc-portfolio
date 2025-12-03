@@ -75,4 +75,5 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/food-suggestions', [App\Http\Controllers\Api\FoodLogController::class, 'getSuggestions'])->name('api.food-suggestions.index');
     Route::post('/food-logs', [App\Http\Controllers\Api\FoodLogController::class, 'storeManual'])->name('api.food-logs.store');
     Route::post('/food-logs/history', [App\Http\Controllers\Api\FoodLogController::class, 'storeFromHistory'])->name('api.food-logs.store_history');
+    Route::delete('/food-logs/{foodLog}', [App\Http\Controllers\Api\FoodLogController::class, 'destroy'])->name('api.food-logs.destroy');
 });

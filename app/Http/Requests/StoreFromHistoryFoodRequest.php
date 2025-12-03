@@ -27,7 +27,7 @@ class StoreFromHistoryFoodRequest extends FormRequest
             'meal_type' => ['required', 'string', Rule::in(['breakfast', 'lunch', 'dinner', 'snack'])],
             'multiplier' => ['required', 'numeric', 'min:0.01', 'max:999.999'],
             'percent' => ['nullable', 'numeric', 'min:1', 'max:9999'],
-            'date' => ['nullable', 'date_format:Y-m-d'],
+            'consumed_at' => ['nullable', 'date_format:Y-m-d'],
         ];
     }
 

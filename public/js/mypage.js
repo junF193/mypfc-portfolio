@@ -396,9 +396,14 @@
       button.addEventListener('click', (e) => {
         e.preventDefault();
         const mealType = button.dataset.mealType;
+
+        // 現在選択されている日付を取得
+        const dateInput = document.getElementById('nutrition-date');
+        const date = dateInput ? dateInput.value : null;
+
         // Vueコンポーネントに向けてイベントを発信
         window.dispatchEvent(new CustomEvent('open-food-entry-modal', {
-          detail: { mealType: mealType }
+          detail: { mealType: mealType, date: date }
         }));
       });
     });
@@ -467,6 +472,35 @@
       refreshDailyNutrition(); // Recalculate goals
     } catch (e) {
       console.error('saveProfile error', e);
+      showToast('通信エラーが発生しました', 'error');
+    }
+  };
+
+  // --- Delete Food Log ---
+  window.deleteFoodLog = async function (id) {
+    if (!id) return;
+    if (!confirm('本当に削除しますか？')) return;
+
+    try {
+      const res = await fetch(`/api/food-logs/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Accept': 'application/json',
+          'X-CSRF-TOKEN': getCsrfToken()
+        }
+      });
+
+      if (!res.ok) {
+        const data = await parseJsonSafe(res);
+        showToast(data.message || '削除に失敗しました', 'error');
+        return;
+      }
+
+      // 削除成功時はリロードしてBladeの表示を更新
+      window.location.reload();
+
+    } catch (e) {
+      console.error('deleteFoodLog error', e);
       showToast('通信エラーが発生しました', 'error');
     }
   };

@@ -71,7 +71,16 @@ export default {
   name: 'ManualEntry',
   props: {
     mealType: { type: String, required: true },
-    date: { type: String, default: () => new Date().toISOString().slice(0, 10) }
+    date: { 
+      type: String, 
+      default: () => {
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+      }
+    }
   },
   data() {
     return {
@@ -109,6 +118,7 @@ export default {
       };
 
       try {
+        console.log('Posting date:', this.date); // Debug log
         await axios.get('/sanctum/csrf-cookie');
         const res = await axios.post('/api/food-logs', payload);
         

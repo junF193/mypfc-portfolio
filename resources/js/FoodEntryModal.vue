@@ -16,6 +16,12 @@
         <button type="button" @click="close" aria-label="閉じる" class="text-gray-600 hover:text-gray-800 text-2xl leading-none">&times;</button>
       </div>
 
+      <!-- 日付選択 -->
+      <div class="mb-4">
+        <label class="block text-sm font-medium text-gray-700 mb-1">日付</label>
+        <input type="date" v-model="date" class="border rounded p-2 w-full md:w-auto">
+      </div>
+
       <!-- タブナビゲーションエリア -->
       <div class="mb-4 border-b border-gray-200">
         <nav class="-mb-px flex space-x-4 overflow-x-auto" aria-label="Tabs">
@@ -119,10 +125,21 @@ export default {
     // モーダルを開く処理
     open(event) {
       this.mealType = event.detail.mealType; // イベント詳細から食事タイプを取得
-      this.date = event.detail.date || new Date().toISOString().slice(0, 10); // 日付を取得
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const day = String(now.getDate()).padStart(2, '0');
+      const today = `${year}-${month}-${day}`;
+      
+      this.date = event.detail.date || today; // 日付を取得 (ローカル時間)
+      console.log('FoodEntryModal open date:', this.date); // Debug log
       // 指定があればそのタブを開く、なければ履歴タブをデフォルトにする
       this.currentTab = event.detail.tab || 'history';
       this.isOpen = true; // モーダルを表示状態にする
+      // 今日の栄養摂取状況を更新 (mypage.jsなどで定義されたグローバル関数呼び出し)
+      if (typeof window.refreshDailyNutrition === 'function') {
+          window.refreshDailyNutrition();
+      }
     },
     // モーダルを閉じる処理
     close() {
@@ -130,20 +147,10 @@ export default {
     },
     // 食事登録完了時の処理（子コンポーネントから呼ばれる）
     handleRegistered(data) {
-      // モーダルを閉じる
-      this.close();
-      
-      // ユーザーに通知 (グローバルなトースト表示関数があれば使用、なければアラート)
-      if (typeof window.showToast === 'function') {
-          window.showToast('登録しました', 'success');
-      } else {
-          alert('登録しました');
-      }
-
-      // 今日の栄養摂取状況を更新 (mypage.jsなどで定義されたグローバル関数呼び出し)
-      if (typeof window.refreshDailyNutrition === 'function') {
-          window.refreshDailyNutrition();
-      }
+      // 登録完了時の処理
+      // 登録した日付のページにリダイレクトして表示を更新する
+      const targetDate = this.date;
+      window.location.href = `/mypage?date=${targetDate}`;
     }
   }
 }
