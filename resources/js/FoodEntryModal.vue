@@ -1,7 +1,5 @@
 <template>
-  <!-- モーダルが開いている場合のみ表示 (isOpenがtrueの時) -->
-  <!-- fixed inset-0 z-50: 画面全体を覆うオーバーレイ -->
-  <div v-if="isOpen" class="fixed inset-0 bg-gray-800 bg-opacity-75 flex items-center justify-center z-50">
+  <div v-if="isOpen" v-show="isOpen" class="fixed inset-0 bg-gray-800 bg-opacity-75 flex items-center justify-center z-50">
     
     <!-- モーダルのメインコンテンツコンテナ -->
     <!-- w-11/12 md:w-2/3: 画面幅に応じたレスポンシブな幅設定 -->
@@ -113,6 +111,7 @@ export default {
     }
   },
   created() {
+    console.log('FoodEntryModal created. Initial isOpen:', this.isOpen);
     // コンポーネント作成時にグローバルイベントリスナーを登録
     // 外部（mypage.jsなど）から 'open-food-entry-modal' イベントが発火されたら open メソッドを実行
     window.addEventListener('open-food-entry-modal', this.open);

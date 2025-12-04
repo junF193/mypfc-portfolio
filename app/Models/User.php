@@ -29,6 +29,7 @@ class User extends Authenticatable
         'age',
         'gender',
         'activity_level',
+        'diet_goal',
     ];
 
     /**
@@ -53,6 +54,7 @@ class User extends Authenticatable
             'password' => 'hashed',
             'gender' => \App\Enums\Gender::class,
             'activity_level' => \App\Enums\ActivityLevel::class,
+            'diet_goal' => \App\Enums\DietGoal::class,
         ];
     }
 

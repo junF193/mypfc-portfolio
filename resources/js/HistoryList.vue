@@ -28,32 +28,35 @@
     </div>
 
     <!-- 選択後の確認・登録モーダル -->
-    <div v-if="selectedItem" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div class="bg-white p-4 rounded-lg w-full max-w-sm">
-        <h3 class="font-bold text-lg mb-2">{{ selectedItem.food_name }}</h3>
-        
-        <div class="mb-4">
-             <label class="block mb-1 font-semibold text-sm">量（%）</label>
-             <div class="flex items-center gap-2">
-                <input type="number" v-model.number="percentInput" min="1" max="9999" step="1" class="border p-2 rounded w-24 text-sm">
-                <span class="text-sm text-gray-600">%</span>
-             </div>
-             <div class="text-xs text-gray-500 mt-1">
-                kcal: {{ calculateNutrient(selectedItem.energy_kcal_100g) }} / 
-                P: {{ calculateNutrient(selectedItem.proteins_100g) }} / 
-                F: {{ calculateNutrient(selectedItem.fat_100g) }} / 
-                C: {{ calculateNutrient(selectedItem.carbohydrates_100g) }}
-             </div>
-        </div>
+    <!-- 選択後の確認・登録モーダル -->
+    <Teleport to="body">
+      <div v-if="selectedItem" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div class="bg-white p-4 rounded-lg w-full max-w-sm">
+          <h3 class="font-bold text-lg mb-2">{{ selectedItem.food_name }}</h3>
+          
+          <div class="mb-4">
+               <label class="block mb-1 font-semibold text-sm">量（%）</label>
+               <div class="flex items-center gap-2">
+                  <input type="number" v-model.number="percentInput" min="1" max="9999" step="1" class="border p-2 rounded w-24 text-sm">
+                  <span class="text-sm text-gray-600">%</span>
+               </div>
+               <div class="text-xs text-gray-500 mt-1">
+                  kcal: {{ calculateNutrient(selectedItem.energy_kcal_100g) }} / 
+                  P: {{ calculateNutrient(selectedItem.proteins_100g) }} / 
+                  F: {{ calculateNutrient(selectedItem.fat_100g) }} / 
+                  C: {{ calculateNutrient(selectedItem.carbohydrates_100g) }}
+               </div>
+          </div>
 
-        <div class="flex justify-end gap-2">
-          <button @click="selectedItem = null" class="bg-gray-300 text-gray-800 px-4 py-2 rounded text-sm">キャンセル</button>
-          <button @click="registerItem" :disabled="isRegistering" class="bg-green-500 text-white px-4 py-2 rounded text-sm">
-            {{ isRegistering ? '登録中...' : '登録' }}
-          </button>
+          <div class="flex justify-end gap-2">
+            <button @click="selectedItem = null" class="bg-gray-300 text-gray-800 px-4 py-2 rounded text-sm">キャンセル</button>
+            <button @click="registerItem" :disabled="isRegistering" class="bg-green-500 text-white px-4 py-2 rounded text-sm">
+              {{ isRegistering ? '登録中...' : '登録' }}
+            </button>
+          </div>
         </div>
       </div>
-    </div>
+    </Teleport>
   </div>
 </template>
 

@@ -32,14 +32,20 @@
     <div v-if="searchResults.length > 0" class="space-y-4 max-h-96 overflow-y-auto">
       <div v-for="product in searchResults" :key="product.code || product.food_name" class="border p-3 rounded shadow-sm hover:bg-gray-50">
         <div class="flex justify-between items-start">
-          <div>
-            <h3 class="font-bold text-sm mb-1">{{ product.food_name }}</h3>
-            <div class="text-xs text-gray-600 grid grid-cols-2 gap-x-4 gap-y-1">
-              <span>Cal: {{ formatNutrient(product.nutriments?.energy_kcal_100g) }} kcal</span>
-              <span>P: {{ formatNutrient(product.nutriments?.proteins_100g) }} g</span>
-              <span>F: {{ formatNutrient(product.nutriments?.fat_100g) }} g</span>
-              <span>C: {{ formatNutrient(product.nutriments?.carbohydrates_100g) }} g</span>
-            </div>
+          <div class="flex gap-3">
+             <div class="w-16 h-16 flex-shrink-0 bg-gray-100 rounded overflow-hidden flex items-center justify-center">
+                 <img v-if="product.image_url" :src="product.image_url" alt="" class="w-full h-full object-cover">
+                 <span v-else class="text-xs text-gray-400">No Image</span>
+             </div>
+             <div>
+                <h3 class="font-bold text-sm mb-1">{{ product.food_name }}</h3>
+                <div class="text-xs text-gray-600 grid grid-cols-2 gap-x-4 gap-y-1">
+                  <span>Cal: {{ formatNutrient(product.energy_kcal_100g) }} kcal</span>
+                  <span>P: {{ formatNutrient(product.proteins_100g) }} g</span>
+                  <span>F: {{ formatNutrient(product.fat_100g) }} g</span>
+                  <span>C: {{ formatNutrient(product.carbohydrates_100g) }} g</span>
+                </div>
+             </div>
           </div>
           <button type="button" @click="selectProduct(product)" class="bg-yellow-500 text-white px-3 py-1 rounded text-xs hover:bg-yellow-600 whitespace-nowrap">
             選択
@@ -52,31 +58,40 @@
     </div>
 
     <!-- 選択後の確認・登録モーダル (簡易的) -->
-    <div v-if="selectedProduct" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div class="bg-white p-4 rounded-lg w-full max-w-sm">
-        <h3 class="font-bold text-lg mb-2">{{ selectedProduct.food_name }}</h3>
-        <p class="text-sm text-gray-600 mb-4">この食品を登録しますか？</p>
-        
-        <div class="mb-4">
-             <label class="block mb-1 font-semibold text-sm">量（%）</label>
-             <div class="flex items-center gap-2">
-                <input type="number" v-model.number="percentInput" min="1" max="9999" step="1" class="border p-2 rounded w-24 text-sm">
-                <span class="text-sm text-gray-600">%</span>
-             </div>
-        </div>
+    <!-- 選択後の確認・登録モーダル (簡易的) -->
+    <Teleport to="body">
+      <div v-if="selectedProduct" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div class="bg-white p-4 rounded-lg w-full max-w-sm">
+          <h3 class="font-bold text-lg mb-2">{{ selectedProduct.food_name }}</h3>
+          <p class="text-sm text-gray-600 mb-4">この食品を登録しますか？</p>
+          
+          <div class="mb-4">
+               <label class="block mb-1 font-semibold text-sm">量（%）</label>
+               <div class="flex items-center gap-2">
+                  <input type="number" v-model.number="percentInput" min="1" max="9999" step="1" class="border p-2 rounded w-24 text-sm">
+                  <span class="text-sm text-gray-600">%</span>
+               </div>
+          </div>
 
-        <div class="flex justify-end gap-2">
-          <button @click="selectedProduct = null" class="bg-gray-300 text-gray-800 px-4 py-2 rounded text-sm">キャンセル</button>
-          <button @click="registerProduct" :disabled="isRegistering" class="bg-green-500 text-white px-4 py-2 rounded text-sm">
-            {{ isRegistering ? '登録中...' : '登録' }}
-          </button>
+          <div class="flex justify-end gap-2">
+            <button @click="selectedProduct = null" class="bg-gray-300 text-gray-800 px-4 py-2 rounded text-sm">キャンセル</button>
+            <button @click="registerProduct" :disabled="isRegistering" class="bg-green-500 text-white px-4 py-2 rounded text-sm">
+              {{ isRegistering ? '登録中...' : '登録' }}
+            </button>
+          </div>
         </div>
       </div>
-    </div>
+    </Teleport>
   </div>
 </template>
 
+<style scoped>
+/* Scoped styles to prevent leakage */
+</style>
+
 <script>
+import { debounce } from 'lodash';
+
 export default {
   name: 'SearchEntry',
   props: {
@@ -105,11 +120,24 @@ export default {
       isRegistering: false,
     };
   },
+  created() {
+      this.debouncedSearch = debounce(this.performSearch, 500);
+  },
+  watch: {
+      searchKeyword(newVal) {
+          if (newVal && newVal.length >= 2) {
+              this.debouncedSearch();
+          } else {
+              this.searchResults = [];
+              this.searched = false;
+          }
+      }
+  },
   methods: {
     formatNutrient(val) {
       return val !== undefined && val !== null ? Number(val).toFixed(1) : '-';
     },
-    async searchFood() {
+    async performSearch() {
       if (!this.searchKeyword.trim()) return;
       this.isSearching = true;
       this.errorMessage = '';
@@ -121,14 +149,30 @@ export default {
         const res = await axios.get('/api/food/search', {
           params: { search: this.searchKeyword }
         });
-        this.searchResults = res.data;
+        
+        if (res.data.meta && res.data.meta.error) {
+            this.errorMessage = '外部サービスに接続できませんでした';
+            this.searchResults = [];
+        } else {
+            this.searchResults = res.data.data || [];
+        }
       } catch (error) {
         console.error('Search failed', error);
-        this.errorMessage = '検索に失敗しました';
+        if (error.response && error.response.status === 422) {
+             // Validation error (too short etc) - ignore or show specific msg
+        } else {
+             this.errorMessage = '検索に失敗しました';
+        }
       } finally {
         this.isSearching = false;
         this.searched = true;
       }
+    },
+    // Triggered by button click (optional if using debounce on input)
+    searchFood() {
+        if (this.searchKeyword && this.searchKeyword.length >= 2) {
+            this.performSearch();
+        }
     },
     async searchBarcode() {
       if (!this.barcode.trim()) return;
@@ -142,7 +186,7 @@ export default {
         const res = await axios.get('/api/food/barcode', {
           params: { barcode: this.barcode }
         });
-        // Barcode search returns a single object or error, wrap in array for consistency
+        // Barcode search returns a single object or error
         if (res.data && !res.data.error) {
              this.searchResults = [res.data];
         } else {
@@ -167,19 +211,18 @@ export default {
       const product = this.selectedProduct;
       const payload = {
         food_name: product.food_name,
-        energy_kcal_100g: product.nutriments?.energy_kcal_100g ?? null,
-        proteins_100g: product.nutriments?.proteins_100g ?? null,
-        fat_100g: product.nutriments?.fat_100g ?? null,
-        carbohydrates_100g: product.nutriments?.carbohydrates_100g ?? null,
+        energy_kcal_100g: product.energy_kcal_100g,
+        proteins_100g: product.proteins_100g,
+        fat_100g: product.fat_100g,
+        carbohydrates_100g: product.carbohydrates_100g,
         meal_type: this.mealType,
-        source_type: product.source || 'search', // 'openfoodfacts' etc
-        source_food_number: product.food_number || product.code || 'search',
+        source_type: product.source || 'search',
+        source_food_number: product.code || 'search',
         multiplier: this.percentInput / 100,
         consumed_at: this.date,
       };
 
       try {
-        console.log('Posting date:', this.date); // Debug log
         await axios.get('/sanctum/csrf-cookie');
         const res = await axios.post('/api/food-logs', payload);
         

@@ -12,79 +12,80 @@ use Illuminate\Support\Collection;
 
 class FoodService
 {
-   /**
-  * @param string $searchTerm
-  * @return Collection
-  */
-
-    public function searchFood($searchTerm): Collection
+    /**
+     * OpenFoodFactsから食品を検索
+     *
+     * @param string $keyword
+     * @return array
+     */
+    public function searchOpenFoodFacts(string $keyword): array
     {
-        try {
-            $response = Http::withHeaders([
-                'User-Agent' => 'MyApp/1.0 ()'
-            ])->get('https://world.openfoodfacts.org/cgi/search.pl', [
-                'search_terms' => $searchTerm,
-                'search_simple' => 1,
-                'action' => 'process',
-                'json' => 1,
-                'cc' => 'jp',
-                'lc' => 'ja',
-                'page_size' => 20, 
-                'page' => 1,
-            ]);
+        $normalizedKeyword = mb_strtolower(trim($keyword));
+        $cacheKey = 'off:' . md5($normalizedKeyword);
 
-          
+        // キャッシュ制御 (TTL: 300秒)
+        return \Illuminate\Support\Facades\Cache::remember($cacheKey, 300, function () use ($keyword) {
+            try {
+                $response = Http::timeout(5)
+                    ->retry(2, 100)
+                    ->withHeaders(['User-Agent' => 'MyApp/1.0'])
+                    ->get('https://world.openfoodfacts.org/cgi/search.pl', [
+                        'search_terms' => $keyword,
+                        'search_simple' => 1,
+                        'action' => 'process',
+                        'json' => 1,
+                        'cc' => 'jp', // 日本市場限定
+                        'fields' => 'product_name,product_name_ja,nutriments,id,image_front_small_url',
+                        'page_size' => 20,
+                        'page' => 1,
+                    ]);
 
-            // APIリクエストが失敗した、または結果が空の場合
-               if (!$response->successful() || empty($response->json('products'))) {
-                   // 失敗した場合はログに記録
-                    if (!$response->successful()) {
-                       Log::error('Open Food Facts API request failed.', [
-                          'status' => $response->status(),
-                           'body' => $response->body()
-                        ]);
-                   }
-                   // 呼び出し元を止めないように、空のCollectionを返す
-                    return collect([]);
-               }
+                if (!$response->successful()) {
+                    throw new \Exception('API status: ' . $response->status());
+                }
 
-               $products =collect($response->json('products'));
+                $products = $response->json('products', []);
+                $formattedData = collect($products)->map(function ($product) {
+                    return $this->formatProduct($product);
+                })->values()->all();
 
-               $filtered = $products->filter(function ($product){
-                return !empty($product['product_name_ja']);
+                return [
+                    'data' => $formattedData,
+                    'meta' => ['source' => 'openfoodfacts'],
+                ];
 
+            } catch (\Exception $e) {
+                Log::warning('off_search_failed', [
+                    'q' => $keyword,
+                    'error' => $e->getMessage()
+                ]);
 
-               });
-
-               return $filtered->values();
-
-        } catch (\Exception $e) {
-            // 例外が発生した場合はログに記録
-            Log::error('Open Food Facts API request failed.', [
-                'error' => $e->getMessage()
-            ]);
-            // 呼び出し元を止めないように、空のCollectionを返す
-            return collect([]);
-        }
+                return [
+                    'data' => [],
+                    'meta' => ['error' => 'external_unavailable']
+                ];
+            }
+        });
     }
 
-/*バーコードで食品を取得*/
+    /**
+     * バーコードで食品を取得
+     */
     public function getFoodByBarcode($barcode)
     {
-        
         try {
-            $response = http::withHeaders([
-            'User-Agent' => 'MyApp/1.0 (fjun5100@gmail.com)'
-        ])->get("https://world.openfoodfacts.org/api/v2/product/{$barcode}", [
-            'fields' => 'product_name,product_name_ja,nutriments',
-            'lc' => 'ja', 
-            'cc' => 'jp',
-        ]);
+            $response = Http::timeout(5)
+                ->retry(2, 100)
+                ->withHeaders(['User-Agent' => 'MyApp/1.0'])
+                ->get("https://world.openfoodfacts.org/api/v2/product/{$barcode}", [
+                    'fields' => 'product_name,product_name_ja,nutriments,code,image_front_small_url',
+                    'cc' => 'jp',
+                ]);
 
             if ($response->successful()) {
                 $data = $response->json();
                 if (isset($data['status']) && $data['status'] == 1) {
-                    return $this->extractPFC($data);
+                    return $this->formatProduct($data['product']);
                 } else {
                     return ['error' => '商品が見つかりませんでした'];
                 }
@@ -95,24 +96,31 @@ class FoodService
             return ['error' => 'ネットワークエラー: ' . $e->getMessage()];
         }
     }
+
     /**
-     * PFC情報を抽出
+     * APIレスポンスを整形
      */
-private function extractPFC($apiResponse)
-{
-    if (isset($apiResponse['product']['nutriments'])) {
-        $nutriments = $apiResponse['product']['nutriments'];
+    private function formatProduct(array $product): array
+    {
+        $nutriments = $product['nutriments'] ?? [];
+        
+        // 商品名: 日本語名があればそれを優先、なければ英語名、それもなければ '不明'
+        $name = $product['product_name_ja'] ?? $product['product_name'] ?? '不明';
+        if (empty($name)) { 
+            $name = '不明'; 
+        }
+
         return [
-            'code' => $apiResponse['product']['code'],
-            'product_name' => $apiResponse['product']['product_name'] ?? '不明',
-            'product_name_ja' => $apiResponse['product']['product_name_ja'] ?? null,
-            'protein' => $nutriments['proteins_100g'] ?? 0,
-            'fat' => $nutriments['fat_100g'] ?? 0,
-            'carbohydrates' => $nutriments['carbohydrates_100g'] ?? 0,
+            'food_name' => $name,
+            'image_url' => $product['image_front_small_url'] ?? null,
+            'energy_kcal_100g' => $nutriments['energy-kcal_100g'] ?? $nutriments['energy_kcal_100g'] ?? 0, // APIの揺れに対応
+            'proteins_100g' => $nutriments['proteins_100g'] ?? 0,
+            'fat_100g' => $nutriments['fat_100g'] ?? 0,
+            'carbohydrates_100g' => $nutriments['carbohydrates_100g'] ?? 0,
+            'source' => 'api',
+            'code' => $product['code'] ?? $product['id'] ?? null, // ID or Code
         ];
     }
-    return null;
-}
 }
 
 

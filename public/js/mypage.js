@@ -67,7 +67,7 @@
   }
 
   function getSelectedDate() {
-    const el = document.getElementById('nutrition-date');
+    const el = document.getElementById('header-date-input');
     if (el && el.value) return el.value;
     return todayDateString();
   }
@@ -252,7 +252,7 @@
   }
 
   async function refreshDailyNutrition(dateStr = null) {
-    const date = dateStr || (document.getElementById('nutrition-date')?.value) || getSelectedDate();
+    const date = dateStr || getSelectedDate();
     const url = new URL(DAILY_NUTRITION_URL, window.location.origin);
     if (date) url.searchParams.set('date', date);
 
@@ -374,11 +374,14 @@
       }
     });
 
-    // nutrition date change
-    const dateInput = document.getElementById('nutrition-date');
+    // header date change (navigation)
+    const dateInput = document.getElementById('header-date-input');
     if (dateInput) {
       dateInput.addEventListener('change', function () {
-        refreshDailyNutrition(dateInput.value);
+        const newDate = dateInput.value;
+        if (newDate) {
+          window.location.href = `/mypage?date=${newDate}`;
+        }
       });
     }
 
@@ -398,7 +401,7 @@
         const mealType = button.dataset.mealType;
 
         // 現在選択されている日付を取得
-        const dateInput = document.getElementById('nutrition-date');
+        const dateInput = document.getElementById('header-date-input');
         const date = dateInput ? dateInput.value : null;
 
         // Vueコンポーネントに向けてイベントを発信

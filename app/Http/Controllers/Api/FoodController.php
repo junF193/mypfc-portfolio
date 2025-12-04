@@ -24,15 +24,10 @@ class FoodController extends Controller
         $keyword = $request->validated('search');
         
         // サービス層で検索ロジック実行
-        $result = $this->foodService->searchFood($keyword);
+        $result = $this->foodService->searchOpenFoodFacts($keyword);
 
-        if (isset($result['error'])) {
-            return response()->json(['message' => $result['error']], 500);
-        }
-
-        // Resourceクラスで整形してJSONを返す (200 OK)
-        // Note: FoodService returns ['products' => [...]] structure usually
-        return response()->json($result['products']);
+        // サービス層が整形済みのデータを返すので、そのままJSONとして返す
+        return response()->json($result);
     }
 
     public function getFoodByBarcode(GetFoodByBarcodeRequest $request)

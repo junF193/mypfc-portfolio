@@ -6,6 +6,7 @@ use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rules\Enum;
 use App\Enums\Gender;
 use App\Enums\ActivityLevel;
+use App\Enums\DietGoal;
 
 class UpdateProfileRequest extends FormRequest
 {
@@ -30,6 +31,7 @@ class UpdateProfileRequest extends FormRequest
             'age' => ['nullable', 'integer', 'min:0', 'max:150'],
             'gender' => ['nullable', new Enum(Gender::class)],
             'activity_level' => ['nullable', new Enum(ActivityLevel::class)],
+            'diet_goal' => ['nullable', new Enum(DietGoal::class)],
         ];
     }
 }

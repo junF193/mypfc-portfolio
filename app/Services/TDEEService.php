@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\User;
 use App\Enums\Gender;
 use App\Enums\ActivityLevel;
+use App\Enums\DietGoal;
 
 class TDEEService
 {
@@ -56,6 +57,27 @@ class TDEEService
     }
 
     /**
+     * Calculate Target Calories based on Diet Goal.
+     */
+    public function calculateTargetCalories(int $tdee, DietGoal $goal): int
+    {
+        $adjustment = match ($goal) {
+            DietGoal::Lose => -500,
+            DietGoal::Maintain => 0,
+            DietGoal::Gain => 300,
+        };
+
+        $target = $tdee + $adjustment;
+
+        // Safety Guard for weight loss
+        if ($goal === DietGoal::Lose) {
+            $target = max($target, 1200);
+        }
+
+        return (int) round($target);
+    }
+
+    /**
      * Calculate Target PFC (Protein, Fat, Carbs) in grams.
      * Default: P=15%, F=25%, C=60%
      */
@@ -82,9 +104,9 @@ class TDEEService
         $carbsG = $carbsKcal / 4;
 
         return [
-            'protein' => (int) round($proteinG),
-            'fat' => (int) round($fatG),
-            'carbs' => (int) round($carbsG),
+            'protein' => round($proteinG, 1),
+            'fat' => round($fatG, 1),
+            'carbs' => round($carbsG, 1),
         ];
     }
 }

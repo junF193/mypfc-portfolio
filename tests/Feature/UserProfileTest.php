@@ -23,10 +23,17 @@ class UserProfileTest extends TestCase
             'age' => 28,
             'gender' => 'male',
             'activity_level' => 'high',
+            'diet_goal' => 'lose',
         ]);
 
         $response->assertStatus(200)
-            ->assertJson(['message' => 'プロフィールを更新しました']);
+            ->assertJson(['message' => 'プロフィールを更新しました'])
+            ->assertJsonStructure([
+                'message',
+                'user',
+                'target_calories',
+                'target_pfc' => ['protein', 'fat', 'carbs']
+            ]);
 
         $this->assertDatabaseHas('users', [
             'id' => $user->id,
@@ -35,6 +42,7 @@ class UserProfileTest extends TestCase
             'age' => 28,
             'gender' => 'male',
             'activity_level' => 'high',
+            'diet_goal' => 'lose',
         ]);
     }
 

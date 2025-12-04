@@ -16,11 +16,9 @@
       &lt; 前日
     </a>
     <div class="text-center">
-      <h2 class="text-xl font-bold text-gray-800">
-        {{ $currentDate->format('Y年m月d日') }}
-        <span class="text-sm text-gray-500 ml-2">({{ $currentDate->isoFormat('ddd') }})</span>
-      </h2>
-      <input type="hidden" id="nutrition-date" value="{{ $currentDate->format('Y-m-d') }}">
+      <label for="header-date-input" class="sr-only">日付選択</label>
+      <input type="date" id="header-date-input" value="{{ $currentDate->format('Y-m-d') }}" class="text-xl font-bold text-gray-800 border-none bg-transparent text-center focus:ring-indigo-500 rounded cursor-pointer">
+      <div class="text-sm text-gray-500">({{ $currentDate->isoFormat('ddd') }})</div>
     </div>
     <a href="{{ route('mypage.index', ['date' => $currentDate->copy()->addDay()->format('Y-m-d')]) }}" class="text-indigo-600 hover:text-indigo-800 font-bold">
       翌日 &gt;
@@ -87,8 +85,6 @@
       <h2 class="text-lg font-semibold">1日のPFC / カロリー</h2>
 
       <div class="flex items-center space-x-2">
-        <label for="nutrition-date" class="text-sm text-gray-600">日付：</label>
-        <input id="nutrition-date" type="date" value="{{ date('Y-m-d') }}" class="border px-2 py-1 rounded" />
         <button id="refresh-nutrition-btn" class="ml-2 bg-indigo-500 text-white px-3 py-1 rounded hover:bg-indigo-600">更新</button>
       </div>
     </div>
@@ -202,9 +198,21 @@ window.MYPAGE_CONFIG = {
           </select>
         </div>
 
+        <div>
+          <label class="block text-sm font-medium text-gray-700">目的</label>
+          <select name="diet_goal" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm border p-2">
+            <option value="lose" {{ ($user->diet_goal->value ?? 'maintain') === 'lose' ? 'selected' : '' }}>減量 (-500kcal)</option>
+            <option value="maintain" {{ ($user->diet_goal->value ?? 'maintain') === 'maintain' ? 'selected' : '' }}>現状維持 (±0kcal)</option>
+            <option value="gain" {{ ($user->diet_goal->value ?? 'maintain') === 'gain' ? 'selected' : '' }}>増量 (+300kcal)</option>
+          </select>
+        </div>
+
         <div class="flex justify-end pt-4">
           <button type="button" onclick="saveProfile()" class="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700">保存して計算</button>
         </div>
+        <p class="text-xs text-gray-500 mt-4">
+          ※計算結果は目安であり、医学的な助言ではありません。
+        </p>
       </form>
     </div>
   </div>

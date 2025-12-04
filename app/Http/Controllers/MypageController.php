@@ -10,6 +10,7 @@ use App\Models\FavoriteFood;
 use Illuminate\Support\Facades\Log;
 use App\Services\TDEEService;
 use App\Http\Requests\UpdateProfileRequest;
+use App\Enums\DietGoal;
 
 class MypageController extends Controller
 {
@@ -51,9 +52,15 @@ class MypageController extends Controller
 
         // 日付パラメータの取得 (デフォルトは今日)
         $dateStr = $request->input('date');
-        try {
-            $currentDate = $dateStr ? \Carbon\Carbon::parse($dateStr) : \Carbon\Carbon::today();
-        } catch (\Exception $e) {
+        
+        // 厳密な日付バリデーションとフォールバック
+        if ($dateStr && preg_match('/^\d{4}-\d{2}-\d{2}$/', $dateStr)) {
+            try {
+                $currentDate = \Carbon\Carbon::createFromFormat('Y-m-d', $dateStr)->startOfDay();
+            } catch (\Exception $e) {
+                $currentDate = \Carbon\Carbon::today();
+            }
+        } else {
             $currentDate = \Carbon\Carbon::today();
         }
 
@@ -110,9 +117,17 @@ class MypageController extends Controller
         $user = $request->user();
         $user->update($request->validated());
 
+        // Recalculate targets
+        $tdee = $this->tdeeService->calculateTDEE($user);
+        $goal = $user->diet_goal ?? DietGoal::Maintain;
+        $targetCalories = $this->tdeeService->calculateTargetCalories($tdee, $goal);
+        $targets = $this->tdeeService->calculateTargetPFC($targetCalories);
+
         return response()->json([
             'message' => 'プロフィールを更新しました',
             'user' => $user,
+            'target_calories' => $targetCalories,
+            'target_pfc' => $targets,
         ]);
     }
 
@@ -130,10 +145,12 @@ class MypageController extends Controller
 
             // Calculate Targets
             $tdee = $this->tdeeService->calculateTDEE($user);
-            $targets = $this->tdeeService->calculateTargetPFC($tdee);
+            $goal = $user->diet_goal ?? DietGoal::Maintain;
+            $targetCalories = $this->tdeeService->calculateTargetCalories($tdee, $goal);
+            $targets = $this->tdeeService->calculateTargetPFC($targetCalories);
 
             $data['goal'] = [
-                'calories' => $tdee,
+                'calories' => $targetCalories,
                 'protein' => $targets['protein'],
                 'fat' => $targets['fat'],
                 'carbs' => $targets['carbs'],
