@@ -47,7 +47,7 @@ class FoodSuggestionService
         ->where('rn', 1)
         ->orderBy('frequency', 'desc')
         ->limit(10)
-        ->select('sub.*', DB::raw('CASE WHEN fav.user_id IS NULL THEN 0 ELSE 1 END as is_favorited'));
+        ->select('sub.*', DB::raw('CASE WHEN fav.user_id IS NULL THEN 0 ELSE 1 END as is_favorited'), 'fav.id as favorite_id');
 
     return $sql->get();
 }

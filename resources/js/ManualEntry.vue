@@ -1,5 +1,5 @@
 <template>
-  <div class="manual-entry">
+  <div class="manual-entry" style="padding-bottom: 50px; background-color: #f0f0f0;">
     <div v-if="errorMessage" class="p-2 mb-4 text-sm text-red-700 bg-red-100 rounded-lg" role="alert">
       {{ errorMessage }}
     </div>
@@ -35,8 +35,8 @@
         <div>
           <label for="carbohydrates_100g" class="block mb-1 font-semibold text-sm">炭水化物</label>
           <div class="flex items-center">
-             <input type="number" id="carbohydrates_100g" v-model.number="form.carbohydrates_100g" placeholder="0" class="border p-2 w-full rounded text-sm">
-             <span class="ml-1 text-sm text-gray-600">g</span>
+            <input type="number" id="carbohydrates_100g" v-model.number="form.carbohydrates_100g" placeholder="0" class="border p-2 w-full rounded text-sm">
+            <span class="ml-1 text-sm text-gray-600">g</span>
           </div>
         </div>
       </div>
@@ -57,10 +57,27 @@
         </div>
       </div>
 
-      <div class="flex justify-end">
-        <button type="submit" :disabled="isSubmitting" class="bg-green-500 text-white px-6 py-2 rounded hover:bg-green-600 disabled:opacity-50">
-          {{ isSubmitting ? '登録中...' : '登録' }}
-        </button>
+      <div class="mt-4">
+        <div 
+          @click="submitForm"
+          role="button"
+          tabindex="0"
+          style="
+            background-color: #10b981; 
+            color: white; 
+            padding: 15px; 
+            text-align: center; 
+            font-weight: bold; 
+            border-radius: 5px; 
+            margin-top: 20px; 
+            cursor: pointer;
+            display: block;
+            width: 100%;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+          "
+        >
+          {{ isSubmitting ? '登録中...' : '登録する' }}
+        </div>
       </div>
     </form>
   </div>

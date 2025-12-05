@@ -23,7 +23,7 @@ class FoodService
         $normalizedKeyword = mb_strtolower(trim($keyword));
         $cacheKey = 'off:' . md5($normalizedKeyword);
 
-        // キャッシュ制御 (TTL: 300秒)
+        // キャッシュ制御 (5分 = 300秒)
         return \Illuminate\Support\Facades\Cache::remember($cacheKey, 300, function () use ($keyword) {
             try {
                 $response = Http::timeout(5)
@@ -34,24 +34,33 @@ class FoodService
                         'search_simple' => 1,
                         'action' => 'process',
                         'json' => 1,
-                        'cc' => 'jp', // 日本市場限定
-                        'fields' => 'product_name,product_name_ja,nutriments,id,image_front_small_url',
-                        'page_size' => 20,
+                        'cc' => 'jp',
+                        'fields' => 'product_name,product_name_ja,nutriments,code,id,image_front_small_url',
+                        'page_size' => 20, // 上位20件固定
                         'page' => 1,
+                        'sort_by' => 'unique_scans_n', // 人気順 (または省略で関連度)
                     ]);
 
                 if (!$response->successful()) {
                     throw new \Exception('API status: ' . $response->status());
                 }
 
-                $products = $response->json('products', []);
+                $data = $response->json();
+                $products = $data['products'] ?? [];
+                
+                $totalHits = $data['count'] ?? count($products);
                 $formattedData = collect($products)->map(function ($product) {
                     return $this->formatProduct($product);
                 })->values()->all();
 
                 return [
                     'data' => $formattedData,
-                    'meta' => ['source' => 'openfoodfacts'],
+                    'meta' => [
+                        'total_hits' => (int) $totalHits,
+                        'returned' => count($formattedData),
+                        'is_truncated' => $totalHits > 20,
+                        'source' => 'openfoodfacts'
+                    ],
                 ];
 
             } catch (\Exception $e) {
@@ -60,9 +69,15 @@ class FoodService
                     'error' => $e->getMessage()
                 ]);
 
+                // エラー時は空配列とエラー情報を返す (200 OK)
                 return [
                     'data' => [],
-                    'meta' => ['error' => 'external_unavailable']
+                    'meta' => [
+                        'total_hits' => 0,
+                        'returned' => 0,
+                        'is_truncated' => false,
+                        'error' => 'external_unavailable'
+                    ]
                 ];
             }
         });

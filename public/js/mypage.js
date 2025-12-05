@@ -73,130 +73,12 @@
   }
 
   // --- Favorite icon handling ---
-  function setFavoriteIcon(button, favorited) {
-    if (!button) return;
-    button.dataset.favorited = favorited ? 'true' : 'false';
-    button.setAttribute('aria-pressed', favorited ? 'true' : 'false');
-    const icon = button.querySelector('.favorite-icon');
-    if (icon) icon.textContent = favorited ? '❤️' : '🤍';
-    button.title = favorited ? 'お気に入りを解除' : 'お気に入りを追加';
-  }
-
-  function initFavoriteIcons() {
-    document.querySelectorAll('.favorite-btn').forEach(btn => {
-      const fav = btn.dataset.favorited === 'true';
-      setFavoriteIcon(btn, fav);
-    });
-  }
-
-  function updateHistoryButtonIcon(foodLogId, favorited) {
-    try {
-      const selector = `.history-list [data-food-log-id="${foodLogId}"] .favorite-btn`;
-      let btn = document.querySelector(selector);
-
-      if (!btn) {
-        const li = document.querySelector(`.history-list [data-food-log-id="${foodLogId}"]`);
-        if (li) btn = li.querySelector('.favorite-btn');
-      }
-
-      if (btn) {
-        btn.setAttribute('data-favorited', favorited ? 'true' : 'false');
-        btn.setAttribute('aria-pressed', favorited ? 'true' : 'false');
-        const icon = btn.querySelector('.favorite-icon');
-        if (icon) icon.textContent = favorited ? '❤️' : '🤍';
-        btn.title = favorited ? 'お気に入りを解除' : 'お気に入りに追加';
-      } else {
-        console.warn('updateHistoryButtonIcon: button not found for', foodLogId);
-      }
-    } catch (e) {
-      console.error('updateHistoryButtonIcon error', e);
-    }
-  }
-
-  // --- Toggle favorite (POST or DELETE) ---
-  async function toggleFavorite(button) {
-    if (!button || !button.dataset) return;
-    const foodLogId = button.dataset.foodLogId;
-    if (!foodLogId) {
-      showToast('お気に入り登録に失敗しました', 'error');
-      return;
-    }
-
-    const currentlyFav = button.dataset.favorited === 'true';
-
-    // --- 楽観的UI：先にUIを更新 ---
-    updateHistoryButtonIcon(foodLogId, !currentlyFav);
-    button.disabled = true;
-    button.setAttribute('aria-busy', 'true');
-
-    try {
-      const csrfToken = getCsrfToken();
-      if (!csrfToken) {
-        throw new Error('CSRFトークンがありません。ページをリフレッシュしてください。');
-      }
-
-      let resp;
-      if (!currentlyFav) {
-        // お気に入り追加
-        resp = await fetch(FAVORITES_STORE_URL, {
-          method: 'POST',
-          credentials: 'include',
-          headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': csrfToken
-          },
-          body: JSON.stringify({ food_log_id: Number(foodLogId) })
-        });
-      } else {
-        // お気に入り解除 (履歴ID指定)
-        const url = `${FAVORITES_DESTROY_BASE}by-food-log/${encodeURIComponent(foodLogId)}`;
-        resp = await fetch(url, {
-          method: 'DELETE',
-          credentials: 'include',
-          headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': csrfToken
-          },
-        });
-      }
-
-      const data = await parseJsonSafe(resp);
-
-      if (!resp.ok) {
-        // --- ロールバック処理 ---
-        // 失敗したらUIを元の状態に戻す
-        updateHistoryButtonIcon(foodLogId, currentlyFav);
-        const msg = (data && data.message) ? data.message : `エラー: ${resp.status}`;
-        showToast(msg, 'error');
-      } else {
-        // 成功時の通知とイベント発火
-        const msg = (data && data.message) ? data.message : (!currentlyFav ? 'お気に入りに追加しました' : 'お気に入りを解除しました');
-        showToast(msg);
-
-        if (!currentlyFav) {
-          // Vueコンポーネントに新しいお気に入りオブジェクトを通知
-          console.log('Event dispatched: external-favorite-added', data.data);
-          document.dispatchEvent(new CustomEvent('external-favorite-added', { detail: data.data }));
-        } else {
-          // Vueコンポーネントに、どの履歴との紐付けが解除されたかを通知
-          document.dispatchEvent(new CustomEvent('external-favorite-removed', {
-            detail: { source_food_log_id: Number(foodLogId) }
-          }));
-        }
-      }
-    } catch (err) {
-      // --- ロールバック処理 ---
-      // 通信エラー時もUIを元の状態に戻す
-      updateHistoryButtonIcon(foodLogId, currentlyFav);
-      console.error('toggleFavorite error', err);
-      showToast(err.message || '通信エラーが発生しました', 'error');
-    } finally {
-      button.disabled = false;
-      button.removeAttribute('aria-busy');
-    }
-  }
+  // NOTE: Favorite toggling is now handled entirely by Vue components (HistoryList.vue, FavoriteList.vue).
+  // The following legacy functions have been removed:
+  // - setFavoriteIcon
+  // - initFavoriteIcons
+  // - updateHistoryButtonIcon
+  // - toggleFavorite
 
   // --- Modal open/close (Obsolete - Removed) ---
 
@@ -337,41 +219,14 @@
     }
   }
 
-  // Vue コンポーネントからのイベントリスナー
-  document.addEventListener('favorite-added', (e) => {
-    const fav = e.detail;
-    if (fav && fav.source_food_log_id) {
-      updateHistoryButtonIcon(fav.source_food_log_id, true);
-    }
-  });
-
-  document.addEventListener('favorite-removed', (e) => {
-    const detail = e.detail;
-    if (detail && detail.source_food_log_id) {
-      updateHistoryButtonIcon(detail.source_food_log_id, false);
-    }
-  });
+  // NOTE: Vueコンポーネントが全て管理するため、以下のイベントリスナーは削除されました:
+  // - favorite-added
+  // - favorite-removed
 
   // --- Global event delegation ---
   function attachGlobalHandlers() {
     document.addEventListener('click', function (e) {
-      // favorite-btn (Vue管理領域外のみ)
-      const favBtn = e.target.closest('.favorite-btn');
-      if (favBtn) {
-        e.preventDefault();
-
-        // Vue管理領域内のボタンは無視
-        if (favBtn.closest && favBtn.closest('#favorite-vue')) {
-          return;
-        }
-
-        if (favBtn.disabled) return;
-        favBtn.disabled = true;
-        toggleFavorite(favBtn).finally(() => {
-          favBtn.disabled = false;
-        });
-        return;
-      }
+      // NOTE: favorite-btn handling is now done by Vue components.
     });
 
     // header date change (navigation)
@@ -414,7 +269,7 @@
 
   // --- Initialization ---
   async function init() {
-    initFavoriteIcons();
+    // NOTE: initFavoriteIcons() removed - Vue handles it now
     attachGlobalHandlers();
     refreshDailyNutrition();
   }

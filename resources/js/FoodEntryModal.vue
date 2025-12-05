@@ -3,7 +3,7 @@
     
     <!-- モーダルのメインコンテンツコンテナ -->
     <!-- w-11/12 md:w-2/3: 画面幅に応じたレスポンシブな幅設定 -->
-    <div class="bg-white p-6 rounded shadow-lg w-11/12 md:w-2/3 lg:w-1/2 max-h-[90vh] overflow-y-auto">
+    <div style="position: relative; width: 90%; max-width: 600px; max-height: 90vh; display: flex; flex-direction: column; background-color: white; border-radius: 0.5rem; margin: auto; overflow: hidden; padding: 20px;">
       
       <!-- ヘッダー部分：タイトルと閉じるボタン -->
       <div class="flex items-start justify-between mb-4">

@@ -101,32 +101,34 @@
     </ul>
 
     <!-- 選択後の確認・登録モーダル -->
-    <div v-if="selectedFavorite" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div class="bg-white p-4 rounded-lg w-full max-w-sm">
-        <h3 class="font-bold text-lg mb-2">{{ selectedFavorite.food_name }}</h3>
-        
-        <div class="mb-4">
-             <label class="block mb-1 font-semibold text-sm">量（%）</label>
-             <div class="flex items-center gap-2">
-                <input type="number" v-model.number="percentInput" min="1" max="9999" step="1" class="border p-2 rounded w-24 text-sm">
-                <span class="text-sm text-gray-600">%</span>
-             </div>
-             <div class="text-xs text-gray-500 mt-1">
-                kcal: {{ calculateNutrient(selectedFavorite.energy_kcal_100g) }} / 
-                P: {{ calculateNutrient(selectedFavorite.proteins_100g) }} / 
-                F: {{ calculateNutrient(selectedFavorite.fat_100g) }} / 
-                C: {{ calculateNutrient(selectedFavorite.carbohydrates_100g) }}
-             </div>
-        </div>
+    <Teleport to="body">
+      <div v-if="selectedFavorite" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div class="bg-white p-4 rounded-lg w-full max-w-sm">
+          <h3 class="font-bold text-lg mb-2">{{ selectedFavorite.food_name }}</h3>
+          
+          <div class="mb-4">
+               <label class="block mb-1 font-semibold text-sm">量（%）</label>
+               <div class="flex items-center gap-2">
+                  <input type="number" v-model.number="percentInput" min="1" max="9999" step="1" class="border p-2 rounded w-24 text-sm">
+                  <span class="text-sm text-gray-600">%</span>
+               </div>
+               <div class="text-xs text-gray-500 mt-1">
+                  kcal: {{ calculateNutrient(selectedFavorite.energy_kcal_100g) }} / 
+                  P: {{ calculateNutrient(selectedFavorite.proteins_100g) }} / 
+                  F: {{ calculateNutrient(selectedFavorite.fat_100g) }} / 
+                  C: {{ calculateNutrient(selectedFavorite.carbohydrates_100g) }}
+               </div>
+          </div>
 
-        <div class="flex justify-end gap-2">
-          <button @click="selectedFavorite = null" class="bg-gray-300 text-gray-800 px-4 py-2 rounded text-sm">キャンセル</button>
-          <button @click="registerFavorite" :disabled="isRegistering" class="bg-green-500 text-white px-4 py-2 rounded text-sm">
-            {{ isRegistering ? '登録中...' : '登録' }}
-          </button>
+          <div class="flex justify-end gap-2">
+            <button @click="selectedFavorite = null" class="bg-gray-300 text-gray-800 px-4 py-2 rounded text-sm">キャンセル</button>
+            <button @click="registerFavorite" :disabled="isRegistering" class="bg-green-500 text-white px-4 py-2 rounded text-sm" style="background-color: #10b981; color: white; opacity: 1; visibility: visible;">
+              {{ isRegistering ? '登録中...' : '登録' }}
+            </button>
+          </div>
         </div>
       </div>
-    </div>
+    </Teleport>
   </div>
 </template>
 
@@ -408,6 +410,11 @@ export default {
              this.favorites = this.favorites.filter(f => String(f.id) !== String(removedId));
           }
         });
+  },
+
+  // タブ切り替え時に呼ばれる (keep-alive使用時)
+  activated() {
+    this.fetchFavorites(null);
   }
 }
 </script>

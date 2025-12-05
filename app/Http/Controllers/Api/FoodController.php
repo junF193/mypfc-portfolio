@@ -21,7 +21,7 @@ class FoodController extends Controller
     public function search(SearchFoodRequest $request)
     {
         // バリデーション済みデータを取得
-        $keyword = $request->validated('search');
+        $keyword = $request->validated('q');
         
         // サービス層で検索ロジック実行
         $result = $this->foodService->searchOpenFoodFacts($keyword);

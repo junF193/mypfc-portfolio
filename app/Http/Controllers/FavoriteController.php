@@ -65,6 +65,15 @@ class FavoriteController extends Controller
         }
     }
 
+    /**
+     * 履歴からお気に入りを登録
+     * storeと同一のペイロードを期待するため、単純にフォワード
+     */
+    public function storeFromHistory(StoreFavoriteRequest $request)
+    {
+        return $this->store($request);
+    }
+
    
 
     

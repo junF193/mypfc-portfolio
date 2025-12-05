@@ -16,7 +16,13 @@
           <button type="button" @click="selectItem(item)" class="text-sm bg-indigo-500 text-white px-3 py-1 rounded hover:bg-indigo-600">
             食事に登録
           </button>
-          <!-- Favorite button could be added here if needed, but FavoriteList handles favorites separately -->
+          <!-- Favorite Toggle Button -->
+          <button type="button" 
+                  @click="toggleFavorite(item)" 
+                  class="favorite-btn p-2 rounded"
+                  :title="item.is_favorited ? 'お気に入りを解除' : 'お気に入りに追加'">
+            <span class="favorite-icon text-lg">{{ item.is_favorited ? '❤️' : '🤍' }}</span>
+          </button>
         </div>
       </li>
     </ul>
@@ -50,7 +56,7 @@
 
           <div class="flex justify-end gap-2">
             <button @click="selectedItem = null" class="bg-gray-300 text-gray-800 px-4 py-2 rounded text-sm">キャンセル</button>
-            <button @click="registerItem" :disabled="isRegistering" class="bg-green-500 text-white px-4 py-2 rounded text-sm">
+            <button @click="registerItem" :disabled="isRegistering" class="bg-green-500 text-white px-4 py-2 rounded text-sm" style="background-color: #10b981; color: white; opacity: 1; visibility: visible;">
               {{ isRegistering ? '登録中...' : '登録' }}
             </button>
           </div>
@@ -87,6 +93,10 @@ export default {
     };
   },
   mounted() {
+    this.fetchHistory();
+  },
+  // タブ切り替え時に呼ばれる (keep-alive使用時)
+  activated() {
     this.fetchHistory();
   },
   methods: {
@@ -137,6 +147,30 @@ export default {
       } finally {
         this.isRegistering = false;
       }
+    },
+    async toggleFavorite(item) {
+        try {
+            await axios.get('/sanctum/csrf-cookie');
+            if (!item.is_favorited) {
+                 const res = await axios.post('/api/favorites/from-history', { food_log_id: item.id });
+                 item.is_favorited = true;
+                 if (res.data.data && res.data.data.id) {
+                     item.favorite_id = res.data.data.id;
+                 }
+            } else {
+                if (item.favorite_id) {
+                    await axios.delete(`/api/favorites/${item.favorite_id}`);
+                    item.is_favorited = false;
+                    item.favorite_id = null;
+                } else {
+                    console.warn('Cannot remove favorite without ID');
+                }
+            }
+        
+        } catch (e) {
+            console.error('Favorite toggle error', e);
+            alert('お気に入りの更新に失敗しました');
+        }
     }
   }
 }

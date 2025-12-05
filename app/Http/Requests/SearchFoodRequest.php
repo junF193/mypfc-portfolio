@@ -22,7 +22,7 @@ class SearchFoodRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'search' => 'required|string|min:2|max:255',
+            'q' => ['required', 'string', 'min:2', 'max:100'],
         ];
     }
 }
